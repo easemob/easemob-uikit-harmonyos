@@ -13,6 +13,10 @@
       "value": "label"
     },
     {
+      "name": "record_permission_reason",
+      "value": "录制语音需要"
+    },
+    {
       "name": "main_tab_message",
       "value": "消息"
     },

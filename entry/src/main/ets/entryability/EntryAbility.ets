@@ -4,7 +4,7 @@ import { window } from '@kit.ArkUI';
 import { ChatClient, ChatOptions, ChatUIKitClient } from '@easemob/chatuikit';
 
 export default class EntryAbility extends UIAbility {
-  private appKey: string = '';
+  private appKey: string = 'easemob#easeim';
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
     this.initSDK();

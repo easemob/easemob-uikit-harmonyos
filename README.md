@@ -39,9 +39,7 @@
 ohpm install @easemob/chatuikit
 ```
 
-:::tip
-上面的命令在根目录执行，会将 SDK 依赖添加到项目级别；如果要将 SDK 依赖到 Module 级别，需要在对应的 Module 目录下执行上面的命令。
-:::
+>上面的命令在根目录执行，会将 SDK 依赖添加到项目级别；如果要将 SDK 依赖到 Module 级别，需要在对应的 Module 目录下执行上面的命令。
 
 **源码依赖**
 
@@ -62,7 +60,7 @@ ohpm install @easemob/chatuikit
 
 在模块的 `module.json5` ，例如：`HelloWorld` 中 `entry` 模块的 `module.json5` 中，配置示例如下：
 
-```json
+```
 {
   module: {
     requestPermissions: [
@@ -75,7 +73,7 @@ ohpm install @easemob/chatuikit
       {
         "name": "ohos.permission.MICROPHONE",
         "reason": "$string:record_permission_reason",
-        'usedScene': {
+        "usedScene": {
           "abilities": [
             "EntryAbility"
           ],
@@ -211,7 +209,9 @@ struct Index {
 }
 ```
 
-2. 现在可以测试你的应用了。
+2. 将 `Index` 中的 `appKey` 变量的值替换为在[环信即时通讯云控制台](https://console.easemob.com/user/login)中申请的值。
+
+3. 现在可以测试你的应用了。
 
 ### 发送第一条消息
 
