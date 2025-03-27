@@ -1,0 +1,28 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "label"
+    },
+    {
+      "name": "main_tab_message",
+      "value": "消息"
+    },
+    {
+      "name": "main_tab_contact",
+      "value": "联系人"
+    },
+    {
+      "name": "main_tab_me",
+      "value": "个人中心"
+    }
+  ]
+}
