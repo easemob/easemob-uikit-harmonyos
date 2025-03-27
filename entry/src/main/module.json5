@@ -47,6 +47,24 @@
           }
         ],
       }
+    ],
+    requestPermissions: [
+      {
+        name: "ohos.permission.GET_NETWORK_INFO",
+      },
+      {
+        name: "ohos.permission.INTERNET",
+      },
+      {
+        "name": "ohos.permission.MICROPHONE",
+        "reason": "$string:record_permission_reason",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "always"
+        }
+      }
     ]
   }
 }
