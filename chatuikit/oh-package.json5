@@ -12,5 +12,6 @@
   },
   "compatibleSdkVersion": '5.0.0(12)',
   "homepage": 'https://www.easemob.com/',
+  "repository": "https://github.com/easemob/easemob-uikit-harmonyos",
   "artifactType": "original"
 }
