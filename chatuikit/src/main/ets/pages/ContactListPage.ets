@@ -43,7 +43,7 @@ export struct ContactListPage {
   }
 
   showAddContactDialog() {
-    this.pathStack?.pushPath({name: "AddContactDialogPage"});
+    this.navPathStack?.pushPath({name: "AddContactDialogPage"});
   }
 
   @Builder
