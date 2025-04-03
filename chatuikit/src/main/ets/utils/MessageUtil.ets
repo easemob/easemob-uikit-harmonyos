@@ -32,7 +32,7 @@ import { ChatReplyContentType } from '../model/ChatReplyContentType';
 import { JSON } from '@kit.ArkTS';
 import { MessageContent } from '../model/Message';
 import { RichEditorSpanModel } from '../model/builder/MessageComponentModel';
-import { getString } from './CommonUtils';
+import { getString, parseJson } from './CommonUtils';
 import { ChatUserInfoManager } from '../internal/manager/ChatUserInfoManager';
 import { isCurrentUser } from './GroupUtil';
 import { ChatUser, MessageUserInfo } from '../internal/model/ChatUser';
@@ -1020,7 +1020,7 @@ export function getUserInfoFromMessage(message: ChatMessage): ChatUser | undefin
   if (isIncludeUserInfo(message)) {
     let ext = message.ext();
     let userJsonStr = ext.get(KitConstants.MESSAGE_EXT_USER_INFO_KEY) as string;
-    let userInfo: object | null = JSON.parse(userJsonStr);
+    let userInfo: object | null = parseJson(userJsonStr);
     if (userInfo) {
       let keys = Object.keys(userInfo);
       let user = new ChatUser(message.getFrom());
