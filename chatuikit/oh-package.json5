@@ -1,6 +1,6 @@
 {
   "name": "@easemob/chatuikit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Easemob Chat UIKit for HarmonyOS.",
   "keywords": ['easemob', 'chat', 'uikit', 'IM'],
   "main": "Index.ets",
