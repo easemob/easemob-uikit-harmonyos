@@ -145,7 +145,7 @@ export class ChatUserInfoManager {
     let provider = uikit.profileProvider;
     if (provider) {
       let user = await provider.fetchProfile(userId, groupId);
-      if (user && user instanceof ChatUserProfile) {
+      if (user && user instanceof ChatUserProfile && user.id === userId) {
         let chatUser = transferUserProfile(user);
         if (!groupId) {
           this.userInfos.set(userId, chatUser);
@@ -188,9 +188,11 @@ export class ChatUserInfoManager {
       let users = await provider.fetchProfile(lastUserIds) as ChatUserProfile[];
       if (users && !(users instanceof ChatUserProfile)) {
         users.forEach(item => {
-          let user = transferUserProfile(item);
-          this.userInfos.set(item.id, user);
-          result.push(user);
+          if (lastUserIds.includes(item.id)) {
+            let user = transferUserProfile(item);
+            this.userInfos.set(item.id, user);
+            result.push(user);
+          }
         })
       }
     }
