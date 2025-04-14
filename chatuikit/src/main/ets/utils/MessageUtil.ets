@@ -551,11 +551,11 @@ export function getMessageFileLengthStr(fileLength: number | undefined) {
     return '';
   }
   if (fileLength < 1024) {
-    return fileLength + 'b';
+    return fileLength + 'B';
   } else if (fileLength < 1024 * 1024) {
-    return (fileLength / 1024).toFixed() + 'kb';
+    return (fileLength / 1024).toFixed() + 'KB';
   } else {
-    return (fileLength / (1024 * 1024)).toFixed() + 'mb';
+    return (fileLength / (1024 * 1024)).toFixed() + 'MB';
   }
 }
 
