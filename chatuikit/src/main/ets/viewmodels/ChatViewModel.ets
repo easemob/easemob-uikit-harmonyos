@@ -55,6 +55,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
   protected chatType: ChatType = ChatType.Chat;
   protected conversation?: Conversation;
   protected isFetchMessagesFromServer: boolean = false;
+  listScroller: Scroller = new Scroller();
   onDeleteMessageResult?: (messageId: string) => void;
   onRecallMessageResult?: (code: number, messageId: string) => void;
   onReceivedMessage?: (message: ChatMessage) => void;
@@ -137,7 +138,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
    * 滑动到指定位置。
    * @param target
    */
-  abstract scrollToTarget(target: number);
+  abstract scrollToTarget(target: number, smooth?: boolean, align?: ScrollAlign, options?: ScrollToIndexOptions);
 
 }
 
@@ -145,7 +146,6 @@ export class ChatViewModel extends BaseChatViewModel{
   protected cursorOrStartMsgId: string = '';
   protected pageSize: number = 20;
   protected fetchOptions: FetchMessageOption = defaultFetchMessagesOptions();
-  protected listScroller: Scroller = new Scroller();
   protected isLoadedData: boolean = false;
 
   private messageListener: ChatMessageListener = {
@@ -172,7 +172,6 @@ export class ChatViewModel extends BaseChatViewModel{
       }
     },
     onMessageRecalled: (recallInfo: RecallMessageInfo[]) => {
-      console.log("onMessageRecalled size: "+recallInfo.length);
       let msgs: ChatMessage[] = [];
       recallInfo.forEach(item => {
         if (this.isCurrentConv(item.getConversationId())) {
@@ -207,12 +206,11 @@ export class ChatViewModel extends BaseChatViewModel{
     }
   }
 
-  constructor(conversationId: string, chatType: ChatType = ChatType.Chat, listScroller: Scroller) {
+  constructor(conversationId: string, chatType: ChatType = ChatType.Chat) {
     super();
     this.conversationId = conversationId;
     this.chatType = chatType;
     this.conversation = ChatClient.getInstance().chatManager()?.getConversation(conversationId, chatType as number, true);
-    this.listScroller = listScroller;
   }
 
   private isCurrentConv(message: ChatMessage | string): boolean {
@@ -417,9 +415,9 @@ export class ChatViewModel extends BaseChatViewModel{
     })
   }
 
-  scrollToTarget(target: number) {
+  scrollToTarget(target: number, smooth?: boolean, align?: ScrollAlign, options?: ScrollToIndexOptions) {
     setTimeout(() => {
-      this.listScroller.scrollToIndex(target);
+      this.listScroller.scrollToIndex(target, smooth, align, options);
     })
   }
 
