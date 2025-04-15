@@ -53,6 +53,9 @@ export function parseJson(json?: string) {
   if (!json) {
     return null;
   }
+  if (typeof json === 'object') {
+    return json;
+  }
   let result = JSON.parse(json);
   if (JSON.stringify(result) === '{}' || JSON.stringify(result) === '[]') {
     return null;

@@ -755,8 +755,11 @@ export function parseMessageReplyInfo(message: ChatMessage | ChatKitMessage) {
   if (!isReplyMessage(message)) {
     return undefined;
   }
-  let ext = msg.ext().get(KitConstants.REPLY_MSG_QUOTE) as string;
-  return JSON.parse(ext) as Record<string, string>;
+  let ext = msg.ext().get(KitConstants.REPLY_MSG_QUOTE);
+  if (typeof ext === 'string') {
+    return JSON.parse(ext) as Record<string, string>;
+  }
+  return ext as Record<string, string>;
 }
 
 /**

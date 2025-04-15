@@ -4,13 +4,13 @@ import {
   ChatError,
   ChatLog,
   ChatMessage,
-  ChatMessageBody,
   ChatType,
   CmdMessageBody,
   ContentType,
   CustomMessageBody,
   FileMessageBody,
-  GroupReadAck
+  GroupReadAck,
+  TextMessageBody
 } from '@easemob/chatsdk';
 import { kitMedia } from '../manager/MediaManager';
 import { getFilePath, getRandomFilename } from '../internal/utils/UIKitUtils';
@@ -136,7 +136,7 @@ export abstract class BaseMessageViewModel {
    * @param onError
    * @param onSuccess
    */
-  editMessage(messageId: string, modifiedBody: ChatMessageBody, onError: OnEditError = () => {}, onSuccess: OnEditSuccess = () => {}) {}
+  editMessage(messageId: string, modifiedBody: TextMessageBody | CustomMessageBody, onError: OnEditError = () => {}, onSuccess: OnEditSuccess = () => {}) {}
 
   /**
    * 重新发送消息的逻辑
@@ -324,7 +324,7 @@ export class MessageViewModel extends BaseMessageViewModel {
     this.sendMessage(message, onError, onSuccess);
   }
 
-  editMessage(messageId: string, modifiedBody: ChatMessageBody, onError: OnEditError = () => {}, onSuccess: OnEditSuccess = () => {}) {
+  editMessage(messageId: string, modifiedBody: TextMessageBody | CustomMessageBody, onError: OnEditError = () => {}, onSuccess: OnEditSuccess = () => {}) {
     uikit.sdk.chatManager()?.modifyMessage(messageId, modifiedBody).then(result => {
       onSuccess(result);
       this.onEditSuccess?.(result);
