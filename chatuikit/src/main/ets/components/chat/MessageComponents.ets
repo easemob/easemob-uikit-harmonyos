@@ -99,7 +99,8 @@ export struct MessageItemView {
           aboutToAppear: () => {
             let messageMenus = this.messageItemMenusInnerProvider(this.message);
             this.messageMenus = filterMessageMenu(messageMenus, this.message.origin);
-          }
+          },
+          borderRadius: $r('app.float.corner_radius_small_extra')
         })
     }
     .alignRules({
