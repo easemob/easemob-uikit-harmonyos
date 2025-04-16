@@ -1098,6 +1098,7 @@ export struct ChatMessageReplyView {
           .margin({
             end: LengthMetrics.vp(16)
           })
+          .attributeModifier(this.getTargetTipAttribute())
         } else if (this.type === ContentType.VIDEO) {
           Text() {
             ImageSpan($r('app.media.chat_icon_reply_video'))
@@ -1111,6 +1112,7 @@ export struct ChatMessageReplyView {
           .margin({
             end: LengthMetrics.vp(16)
           })
+          .attributeModifier(this.getTargetTipAttribute())
         } else if (this.type === ContentType.CUSTOM && this.message && isUserCardMessage(this.message?.origin)) {
           Text() {
             ImageSpan($r('app.media.chat_icon_reply_user_card'))
@@ -1125,6 +1127,7 @@ export struct ChatMessageReplyView {
           .margin({
             end: LengthMetrics.vp(16)
           })
+          .attributeModifier(this.getTargetTipAttribute())
         } else {
           Text($r('app.string.chat_reply_unkown_type'))
             .fontColor($r('app.color.chat_color_text_tertiary'))
