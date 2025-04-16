@@ -1138,7 +1138,7 @@ export struct ChatMessageReplyView {
           src: this.message ? getImageAttachmentResource(this.message) : $r('app.media.quote_default_image_icon'),
           width: 36,
           height: 36,
-          imageFit: ImageFit.Auto,
+          imageFit: ImageFit.Fill,
           attributeModifier: new ChatReplyMediaAttributeModifier()
         })
       }
@@ -1149,7 +1149,7 @@ export struct ChatMessageReplyView {
             src: this.message ? getVideoThumbnailResource(this.message) : $r('app.media.quote_default_video_icon'),
             width: 36,
             height: 36,
-            imageFit: ImageFit.Auto,
+            imageFit: ImageFit.Fill,
             attributeModifier: new ChatReplyMediaAttributeModifier()
           })
           imageBuilder({
