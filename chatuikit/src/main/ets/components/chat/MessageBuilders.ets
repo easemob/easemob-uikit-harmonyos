@@ -37,6 +37,7 @@ export function messageItemDateBuilder(param: TextDateModel) {
     start: {anchor: 'barrier_message_avatar_end', align: HorizontalAlign.End},
     top: {anchor: 'message_item_bubble', align: VerticalAlign.Bottom}
   })
+  .height($r('app.float.message_item_date_height'))
   .padding({
     top: $r('app.float.message_item_bubble_margin')
   })
@@ -182,10 +183,12 @@ export function messageItemTextBuilder(param: MessageTextModel) {
         })
       }
       .fontColor(param.fontColor ?? getMessageContentFontColor(param.isSender))
+      .lineHeight(22)
       .attributeModifier(param.attributeModifier ?? new TextBodyLargeAttributeModifier())
     } else {
       Text(param.content)
         .fontColor(param.fontColor ?? getMessageContentFontColor(param.isSender))
+        .lineHeight(22)
         .attributeModifier(param.attributeModifier ?? new TextBodyLargeAttributeModifier())
         .lineBreakStrategy(LineBreakStrategy.BALANCED)
     }

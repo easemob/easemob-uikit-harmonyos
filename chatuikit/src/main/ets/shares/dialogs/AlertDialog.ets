@@ -1,5 +1,6 @@
 import { DialogOptions } from '../../model/DialogOptions';
 import {
+  TextHeadlineSmallAttributeModifier,
   TextLabelMediumAttributeModifier,
   TextTitleLargeAttributeModifier
 } from '../attributeModifiers/TextAttributeModifiers';
@@ -156,7 +157,7 @@ export struct ChatAlertDialog {
           })
           .backgroundColor(this.options.cancelButton?.backgroundColor ?? $r('app.color.chat_color_background'))
           .visibility(this.options.cancelButton?.visible ?? Visibility.Visible)
-          .attributeModifier(this.options.cancelButton?.attributeModifier ?? new TextLabelMediumAttributeModifier())
+          .attributeModifier(this.options.cancelButton?.attributeModifier ?? new TextHeadlineSmallAttributeModifier())
 
         Blank(12).visibility(this.isDividerVisible() ? Visibility.None : Visibility.Visible)
 
@@ -171,7 +172,7 @@ export struct ChatAlertDialog {
           .borderRadius($r('app.float.corner_radius_small_extra'))
           .backgroundColor(this.options.confirmButton?.backgroundColor ?? $r('app.color.chat_color_emphasize'))
           .visibility(this.options.confirmButton?.visible ?? Visibility.Visible)
-          .attributeModifier(this.options.confirmButton?.attributeModifier ?? new TextLabelMediumAttributeModifier())
+          .attributeModifier(this.options.confirmButton?.attributeModifier ?? new TextHeadlineSmallAttributeModifier())
       }
       .width('100%')
       .margin({

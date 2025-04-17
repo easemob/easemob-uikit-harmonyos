@@ -103,6 +103,7 @@ export struct MessageTextBubbleView {
             Text($r('app.string.chat_edit_message_flag'))
               .fontColor(isSender(this.message.origin) ? $r('app.color.chat_color_edit_message_send_flag') : $r('app.color.chat_color_edit_message_receive_flag'))
               .alignSelf(ItemAlign.End)
+              .lineHeight(14)
               .attributeModifier(new TextBodyExtraSmallAttributeModifier())
           }
         }

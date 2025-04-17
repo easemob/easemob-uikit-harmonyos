@@ -94,6 +94,7 @@ export struct ContactListPage {
       .height('100%')
     }
     .hideTitleBar(true)
+    .backgroundColor($r('app.color.chat_color_background'))
     .onReady((context) => {
       if (!this.navPathStack) {
         this.navPathStack = context.pathStack

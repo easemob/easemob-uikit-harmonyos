@@ -221,6 +221,11 @@
       "comment": "语音消息接收方语音标记填充色"
     },
     {
+      "name": "chat_color_message_image_border",
+      "value": "$color:neutral_30",
+      "comment": "图片消息/视频消息描边颜色"
+    },
+    {
       "name": "chat_color_message_file_length_send",
       "value": "$color:neutral_20",
       "comment": "文件消息文件长度字体颜色"

@@ -109,6 +109,16 @@
       "comment": "消息条目头像底部边距"
     },
     {
+      "name": "message_item_date_height",
+      "value": "18vp",
+      "comment": "消息条目时间控件的高度"
+    },
+    {
+      "name": "message_item_image_border_width",
+      "value": "1vp",
+      "comment": "图片消息/视频消息描边宽度"
+    },
+    {
       "name": "message_item_bubble_margin",
       "value": "2vp",
       "comment": "消息条目bubble头部和底部边距"
