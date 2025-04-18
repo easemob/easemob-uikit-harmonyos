@@ -79,6 +79,14 @@
       "data": {
         "description" : "Share contact to another"
       }
+    },
+    {
+      "name": "NewConversationPage",
+      "pageSourceFile": "src/main/ets/pages/NewConversationPage.ets",
+      "buildFunction": "NewConversationPageBuilder",
+      "data": {
+        "description" : "Select a contact to start a new conversation"
+      }
     }
   ]
 }

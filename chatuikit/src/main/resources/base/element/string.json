@@ -385,6 +385,10 @@
     {
       "name": "chat_message_recall_dialog_title",
       "value": "确认撤回这条消息？"
+    },
+    {
+      "name": "new_conversation_page_title",
+      "value": "新会话"
     }
   ]
 }

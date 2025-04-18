@@ -28,7 +28,7 @@ export struct ConversationListPage {
   @Param titleOperationMenus: MenuItem[] = defaultConvOperationMenus((id: string | number) => {
     if (typeof id === 'string') {
       if (id === KitConstants.CONV_PAGE_ACTION_NEW_CHAT) {
-
+        this.navPathStack?.pushPath({name: "NewConversationPage"});
       } else if (id === KitConstants.CONV_PAGE_ACTION_ADD_CONTACT) {
         this.navPathStack?.pushPath({name: "AddContactDialogPage"});
       } else if (id === KitConstants.CONV_PAGE_ACTION_CREATE_GROUP) {

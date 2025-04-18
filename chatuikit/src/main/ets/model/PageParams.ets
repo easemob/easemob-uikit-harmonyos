@@ -14,6 +14,15 @@ export class ChatPageParams {
  */
 export class SearchContactPageParams {
   responseType: SearchContactResponseType = SearchContactResponseType.chat
+  /**
+   * 点击后是替换搜索页面还是跳转到新的页面
+   */
+  isReplacePath?: boolean;
+
+  /**
+   * 是否进行通知，以进行页面关闭等操作
+   */
+  isNeedNotify?: boolean;
 }
 
 export enum SearchContactResponseType {

@@ -13,9 +13,11 @@ export class KitConstants {
   static readonly EVENTBUS_INPUT_FLAG = 'input_type';
   static readonly EVENTBUS_MESSAGE_DOWNLOAD_THUMBNAIL_EXT = 'download_thumbnail';
   static readonly EVENTBUS_CONV_FLAG = 'conversation';
+  static readonly EVENTBUS_PAGE_FLAG = 'page';
   static readonly EVENTBUS_UPDATE_ACTION = 'update';
   static readonly EVENTBUS_DELETE_ACTION = 'delete';
   static readonly EVENTBUS_ADD_ACTION = 'add';
+  static readonly EVENTBUS_POP_ACTION = 'pop';
   /**
    * User card
    */

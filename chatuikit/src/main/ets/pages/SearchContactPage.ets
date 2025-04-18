@@ -4,32 +4,49 @@ import { ChatKitContact } from '../model/ChatKitContact';
 import { ChatPageParams, SearchContactPageParams, SearchContactResponseType } from '../model/PageParams';
 import { BaseContactListViewModel, ContactListViewModel } from '../viewmodels/ContactViewModel';
 import { ArrayList } from '@kit.ArkTS';
+import { EventBus, getEventStr, KitConstants } from '../../../../Index';
 
 @ComponentV2
 export struct SearchContactPage {
   @Event onItemClick: Callback<ChatKitContact> = (item) => {
     if (this.responseType === SearchContactResponseType.chat) {
-      this.pathStack.pushPath({name: "ChatPage", param: {
-        conversationId: item.id,
-        conversationType: ConversationType.Chat
-      } as ChatPageParams
-      })
+      if (this.isReplacePath) {
+        this.pathStack.replacePath({name: "ChatPage", param: {
+          conversationId: item.id,
+          conversationType: ConversationType.Chat
+        } as ChatPageParams});
+      } else {
+        this.pathStack.pushPath({name: "ChatPage", param: {
+          conversationId: item.id,
+          conversationType: ConversationType.Chat
+        } as ChatPageParams});
+      }
+      if (this.isNeedNotify) {
+        EventBus.global().emit(getEventStr(KitConstants.EVENTBUS_PAGE_FLAG, KitConstants.EVENTBUS_POP_ACTION), 'SearchContactPage');
+      }
     } else if (this.responseType === SearchContactResponseType.onPop) {
       this.pathStack.pop(item);
     }
   }
   pathStack: NavPathStack = new NavPathStack();
   responseType: SearchContactResponseType = SearchContactResponseType.chat;
+  isReplacePath: boolean = false;
+  /**
+   * 是否需要在点击后发出通知
+   */
+  isNeedNotify: boolean = false;
 
   build() {
     NavDestination() {
       SearchContactView({
+        dividerVisible: true,
         onBackPress: () => {
           this.pathStack.pop();
         },
         onItemClick: this.onItemClick
       })
     }
+    .backgroundColor($r('app.color.chat_color_background'))
     .hideTitleBar(true)
     .onReady((context) => {
       this.pathStack = context.pathStack
@@ -39,6 +56,8 @@ export struct SearchContactPage {
           let param = params[0];
           if (param) {
             this.responseType = param.responseType
+            this.isReplacePath = param.isReplacePath ?? false;
+            this.isNeedNotify = param.isNeedNotify ?? false;
           }
         }
       }
@@ -97,9 +116,11 @@ export struct ContactSearchSelectorPage {
         },
         onItemClick: this.onItemClick,
         isCheckModel: true,
-        cancelText: this.cancelText
+        cancelText: this.cancelText,
+        dividerVisible: true
       })
     }
+    .backgroundColor($r('app.color.chat_color_background'))
     .hideTitleBar(true)
     .onReady((context) => {
       this.pathStack = context.pathStack

@@ -75,6 +75,10 @@ export struct ContactItemView {
               }
             })
           }
+          .margin({
+            start: LengthMetrics.vp(12),
+            end: LengthMetrics.vp(12)
+          })
           .attributeModifier(new TextSingleLineAttributeModifier())
           .attributeModifier(new TextTitleMediumAttributeModifier())
         } else {

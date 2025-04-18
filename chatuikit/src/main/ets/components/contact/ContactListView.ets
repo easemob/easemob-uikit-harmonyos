@@ -17,6 +17,7 @@ export struct ContactListView {
    * 是否展示搜索组件
    */
   @Param showSearchView: boolean = true;
+  @Param searchViewHint: ResourceStr = $r('app.string.placeholder_search_contact');
   @BuilderParam searchBuilder: (onClick: KitCallback, textParam: TextModel) => void = searchBuilder;
   @BuilderParam moreActionBuilder?: (onClick: KitCallback<number>) => void;
   @Event onSearchClick: KitCallback;
@@ -40,7 +41,7 @@ export struct ContactListView {
   build() {
     Column() {
       if (this.showSearchView) {
-        this.searchBuilder(this.onSearchClick, {content: $r('app.string.placeholder_search_contact')})
+        this.searchBuilder(this.onSearchClick, {content: this.searchViewHint})
       }
       Stack({ alignContent: Alignment.End }) {
         List({scroller: this.scroller}) {

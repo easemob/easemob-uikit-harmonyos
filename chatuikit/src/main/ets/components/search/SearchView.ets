@@ -86,6 +86,8 @@ export struct SearchContactView {
   @Param isCheckModel: boolean = false;
   @Param cancelText: ResourceStr = $r('app.string.cancel');
 
+  @Param dividerVisible: boolean = false;
+
   aboutToAppear(): void {
     resizeSoftware(getContext(this))
   }
@@ -118,7 +120,8 @@ export struct SearchContactView {
                   contact: obj.item,
                   isSearchStyle: true,
                   keyword: this.keyword,
-                  isCheckModel: this.isCheckModel
+                  isCheckModel: this.isCheckModel,
+                  dividerVisible: this.dividerVisible
                 })
               }
               .onClick(() => {

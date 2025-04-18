@@ -357,7 +357,7 @@
     },
     {
       "name": "chat_color_conv_item_bg",
-      "value": "$color:transparent",
+      "value": "$color:chat_color_background",
       "comment": "会话列表条目背景色"
     },
     {
