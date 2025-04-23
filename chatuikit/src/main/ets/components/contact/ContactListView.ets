@@ -72,8 +72,9 @@ export struct ContactListView {
               }
             })
             .key((item, index) => {
-              return item.key + index;
+              return item.key;
             })
+            .virtualScroll()
 
           if (this.viewModel.allLocalContacts.length > 0) {
             ListItem() {

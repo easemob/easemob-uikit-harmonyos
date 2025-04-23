@@ -389,6 +389,22 @@
     {
       "name": "new_conversation_page_title",
       "value": "新会话"
+    },
+    {
+      "name": "notification_invitation_reason",
+      "value": "请求添加你为好友"
+    },
+    {
+      "name": "new_request_page_title",
+      "value": "新请求"
+    },
+    {
+      "name": "new_request_agreed",
+      "value": "已同意"
+    },
+    {
+      "name": "new_request_refused",
+      "value": "已拒绝"
     }
   ]
 }

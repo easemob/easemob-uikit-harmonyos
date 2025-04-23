@@ -1,4 +1,4 @@
-import { ChatError } from '@easemob/chatsdk';
+import { ChatError, ContactListener } from '@easemob/chatsdk';
 import uikit from '../internal/ChatUIKit';
 import { DataPreferenceManager } from '../internal/manager/DataPreferenceManager';
 import { ChatKitContact, ContactsGroup } from '../model/ChatKitContact';
@@ -11,11 +11,15 @@ import { StringUtil } from '../utils/StringUtil';
 import { GroupRepo } from '../repositories/GroupRepo';
 import { ChatUserInfoManager } from '../internal/manager/ChatUserInfoManager';
 import { appendFlag, getString } from '../utils/CommonUtils';
+import { EventBus, getEventStr, KitConstants } from '../../../../Index';
+import listenerWrapper from '../internal/wapper/ChatListenersWrapper';
+import { NotificationRepository } from '../repositories/NotificationRepository';
 
 @ObservedV2
 export abstract class BaseContactListViewModel extends BaseListViewModel<ContactsGroup> {
   @Trace alphabets: string[] = [];
   @Trace joinedGroupCount: number = 0;
+  @Trace newRequestCount: number = 0;
   @Trace allLocalContacts: ChatKitContact[] = [];
   @Trace searchResult: ChatKitContact[] = [];
 
@@ -28,6 +32,11 @@ export abstract class BaseContactListViewModel extends BaseListViewModel<Contact
   abstract getAlphabets();
 
   abstract fetchJoinedGroupCount();
+
+  /**
+   * 获取本地新请求的未读数量。
+   */
+  abstract getNewRequestsCount();
 
   /**
    * 在本地搜索会话。
@@ -48,6 +57,18 @@ export class ContactListViewModel extends BaseContactListViewModel {
   static IS_LOAD_CONTACT_FROM_SERVER: string = 'is_load_contact_from_server';
   protected declare collator: intl.Collator;
   private hasLoaded: boolean = false;
+  private requestRepository: NotificationRepository = new NotificationRepository();
+  private listener: ContactListener = {
+    onContactAdded: (userId: string) => {
+      this.getContactList();
+    },
+    onContactDeleted: (userId: string) => {
+      this.getContactList();
+    },
+    onFriendRequestAccepted: (userId: string) => {
+      this.getContactList();
+    }
+  }
 
   aboutToAppear(): void {
     this.collator = new intl.Collator('zh-CN', {
@@ -55,14 +76,28 @@ export class ContactListViewModel extends BaseContactListViewModel {
       usage: 'sort',
       sensitivity: 'case'
     })
-    this.getContacts().catch((e: CommonError) => {
-      this.errorInfo = ErrorInfo.create('getContacts', ChatTransfer.transferError(e));
-    });
+    this.getContactList();
     this.fetchJoinedGroupCount();
+    this.getNewRequestsCount();
+    // 监听通知
+    EventBus.global().on(getEventStr(KitConstants.EVENTBUS_CONTACT_FLAG, KitConstants.EVENTBUS_ADD_ACTION), () => {
+      this.getContactList();
+    })
+    EventBus.global().on(getEventStr(KitConstants.EVENTBUS_NOTIFICATION_FLAG, KitConstants.EVENTBUS_UPDATE_ACTION), () => {
+      this.getNewRequestsCount();
+    })
+
+    listenerWrapper.addContactChangeListener(this.listener);
   }
 
   aboutToDisAppear(): void {
+    listenerWrapper.removeContactChangeListener(this.listener);
+  }
 
+  private getContactList() {
+    this.getContacts().catch((e: CommonError) => {
+      this.errorInfo = ErrorInfo.create('getContacts', ChatTransfer.transferError(e));
+    });
   }
 
   async getContacts() {
@@ -164,6 +199,10 @@ export class ContactListViewModel extends BaseContactListViewModel {
     }).catch((e: ChatError) => {
       this.errorInfo = ErrorInfo.create("fetchJoinedGroupsCount", ChatError.createError(e.errorCode, e.description));
     })
+  }
+
+  getNewRequestsCount(): void {
+    this.newRequestCount = this.requestRepository.getUnreadNotifications();
   }
 
   async searchContacts(key: string) {

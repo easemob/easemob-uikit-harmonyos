@@ -14,6 +14,9 @@ export class KitConstants {
   static readonly EVENTBUS_MESSAGE_DOWNLOAD_THUMBNAIL_EXT = 'download_thumbnail';
   static readonly EVENTBUS_CONV_FLAG = 'conversation';
   static readonly EVENTBUS_PAGE_FLAG = 'page';
+  static readonly EVENTBUS_NOTIFICATION_FLAG = 'notification';
+  static readonly EVENTBUS_CONTACT_FLAG = 'contact';
+
   static readonly EVENTBUS_UPDATE_ACTION = 'update';
   static readonly EVENTBUS_DELETE_ACTION = 'delete';
   static readonly EVENTBUS_ADD_ACTION = 'add';
@@ -96,4 +99,13 @@ export class KitConstants {
   static readonly MESSAGE_EXT_USER_INFO_NICKNAME_KEY = "nickname";
   static readonly MESSAGE_EXT_USER_INFO_AVATAR_KEY = "avatarURL";
   static readonly MESSAGE_EXT_USER_INFO_REMARK_KEY = "remark";
+
+  /**
+   * Local request notifications.
+   */
+  static readonly DEFAULT_SYSTEM_CONV_ID = 'default_system_conv';
+  static readonly DEFAULT_SYSTEM_NOTIFICATION_STATUS = 'status';
+  static readonly DEFAULT_SYSTEM_NOTIFICATION_FROM = 'from';
+  static readonly DEFAULT_SYSTEM_NOTIFICATION_REASON = 'reason';
+
 }

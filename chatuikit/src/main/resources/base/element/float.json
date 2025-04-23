@@ -374,6 +374,11 @@
       "name": "conv_item_height",
       "value": "76vp",
       "comment": "会话列表条目高度"
+    },
+    {
+      "name": "new_request_icon_size",
+      "value": "40vp",
+      "comment": "新请求条目中头像尺寸"
     }
   ]
 }
