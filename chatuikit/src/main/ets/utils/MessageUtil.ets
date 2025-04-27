@@ -387,6 +387,12 @@ export function getMsgSendResultEvent(): string {
   return getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "send");
 }
 
+/**
+ * 获取图片消息或者视频消息的缩略图或者首帧。
+ * @param message
+ * @param onNeedDownload
+ * @returns
+ */
 function getImageThumbnailResource(message: ChatKitMessage, onNeedDownload?: (messageId: string) => void): ResourceStr | undefined {
   let attachment = getAttachmentInfo(message);
   if (message.thumbnailDownloadStatus === DownloadStatus.SUCCESS) {
@@ -402,45 +408,60 @@ function getImageThumbnailResource(message: ChatKitMessage, onNeedDownload?: (me
       onNeedDownload?.(message.messageId);
     }
     return undefined;
+  } else if (message.thumbnailDownloadStatus === DownloadStatus.PENDING) {
+    if (isLocalImageAccess(message.origin, true)) {
+      let path = attachment?.thumbnail?.thumbnailLocalPath;
+      return path ? fileUri.getUriFromPath(path) : undefined;
+    } else {
+      if (!StringUtil.isEmpty(attachment?.thumbnail?.thumbnailRemoteUrl)) {
+        onNeedDownload?.(message.messageId);
+      }
+      return undefined;
+    }
   } else {
     return undefined;
   }
 }
 
-function getImageThumbnailLocalPath(message: ChatMessage): string | undefined {
+function getImageThumbnailLocalPath(message: ChatMessage, isIncludeRemoteUrl?: boolean): string | undefined {
   const attachment = getAttachmentInfo(message);
-  if (attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.SUCCESS) {
+  if (attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.SUCCESS || attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.PENDING) {
     if (isLocalImageAccess(message, true)) {
       return attachment?.thumbnail?.thumbnailLocalPath;
     }
   }
-  return undefined;
+  return isIncludeRemoteUrl ? attachment?.thumbnail?.thumbnailRemoteUrl : undefined;
 }
 
 /**
  * 获取图片消息本地地址。
  * @param { ChatMessage } message - 视频消息。
+ * @param { boolean } isIncludeRemoteUrl - 是否包括远程地址。
  * @returns
  */
-function getImageAttachmentLocalPath(message: ChatMessage): string | undefined {
+function getImageAttachmentLocalPath(message: ChatMessage, isIncludeRemoteUrl?: boolean): string | undefined {
   const attachment = getAttachmentInfo(message);
   if (!attachment) {
     return undefined;
   }
   const type = message.getType();
   if (type === ContentType.IMAGE) {
-    if (attachment.downloadStatus === DownloadStatus.SUCCESS) {
+    if (attachment.downloadStatus === DownloadStatus.SUCCESS || attachment.downloadStatus === DownloadStatus.PENDING) {
       if (isLocalImageAccess(message)) {
         return attachment.localPath;
       } else {
-        return getImageThumbnailLocalPath(message);
+        return getImageThumbnailLocalPath(message, isIncludeRemoteUrl);
       }
     } else {
-      return getImageThumbnailLocalPath(message);
+      return getImageThumbnailLocalPath(message, isIncludeRemoteUrl);
     }
   } else if (type === ContentType.VIDEO) {
-    if (isLocalImageAccess(message, true)) {
-      return attachment?.thumbnail?.thumbnailLocalPath;
+    if (attachment.downloadStatus === DownloadStatus.SUCCESS || attachment.downloadStatus === DownloadStatus.PENDING) {
+      if (isLocalImageAccess(message, true)) {
+        return attachment?.thumbnail?.thumbnailLocalPath;
+      }
+    } else {
+      return isIncludeRemoteUrl ? getImageThumbnailLocalPath(message, isIncludeRemoteUrl) : undefined;
     }
   }
   return undefined;
@@ -485,7 +506,7 @@ export async function getImageAttachmentSize(message: ChatMessage): Promise<imag
   if (!localPath) {
     return Promise.reject(ChatError.createError(ChatError.GENERAL_ERROR, 'Local path is undefined.'));
   }
-  return FileUtil.getImageSize(getContext(), localPath);
+  return await FileUtil.getImageSize(getContext(), localPath);
 }
 
 /**

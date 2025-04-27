@@ -7,7 +7,7 @@
   "author": "EaseMob",
   "license": "MIT",
   "dependencies": {
-    "@easemob/chatsdk": "file:./libs/chatsdk-1.6.0.har",
+    "@easemob/chatsdk": "file:./libs/chatsdk-1.7.0.har",
     "@ohos/pinyin4js": "^2.0.0"
   },
   "compatibleSdkVersion": '5.0.0(12)',

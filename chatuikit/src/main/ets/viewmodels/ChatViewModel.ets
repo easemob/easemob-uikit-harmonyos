@@ -1,17 +1,23 @@
 import {
+  ChatCallback,
   ChatClient,
   ChatError,
+  ChatLog,
   ChatMessage,
   ChatMessageListener,
   ChatType,
   ConnectionListener,
+  ContentType,
   Conversation,
   ConversationListener,
   CursorResult,
+  DownloadStatus,
   FetchMessageOption,
-  RecallMessageInfo
+  RecallMessageInfo,
+  VoiceMessageBody
 } from '@easemob/chatsdk';
 import { KitConstants } from '../../../../Index';
+import { ChatTransfer } from '../internal/ChatTransfer';
 import uikit from '../internal/ChatUIKit';
 import { deleteFromArray, update } from '../internal/utils/ArrayUtils';
 import { mentionManager } from '../manager/GroupChatMentionManager';
@@ -22,6 +28,7 @@ import { EventBus, getEventStr } from '../utils/EventBus';
 import {
   createRecalledMessage,
   defaultFetchMessagesOptions,
+  getMsgDownloadThumbnailEvent,
   isMediaMessage,
   isSender
 } from '../utils/MessageUtil';
@@ -81,7 +88,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
   /**
    * 对消息列表进行排序。
    */
-  abstract sortMessages();
+  abstract sortMessages(dataList?: ChatKitMessage[]): ChatKitMessage[] | void;
 
   /**
    * 设置是否从服务器拉取消息，默认为false。
@@ -121,6 +128,12 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
    * @param isCheckMedia 是否检查多媒体消息，默认多媒体消息点击后再发送已读回执。
    */
   abstract ackMessageRead(message: ChatMessage, isCheckMedia?: boolean);
+
+  /**
+   * 下载图片缩略图，视频首帧或者语音消息。
+   * @param message
+   */
+  abstract downloadThumbnail(message: ChatMessage);
 
   /**
    * 更新消息状态。
@@ -233,7 +246,7 @@ export class ChatViewModel extends BaseChatViewModel{
     if (this.isFetchMessagesFromServer) {
       ChatRepo.fetchHistoryMessagesFromServer(this.conversation!.conversationId(), this.conversation!.getType(), pageSize, cursorOrStartMsgId, fetchOptions).then((result: CursorResult<ChatKitMessage>) => {
         this.cursorOrStartMsgId = result.getNextCursor();
-        this.dataList = result.getResult();
+        this.dataList = this.sortMessages(result.getResult());
         this.scrollToLatest();
       }).catch((e: ChatError) => {
         this.errorInfo = ErrorInfo.create('fetchHistoryMessagesFromServer', e);
@@ -242,7 +255,7 @@ export class ChatViewModel extends BaseChatViewModel{
       ChatRepo.loadMoreMessages(this.conversation!, cursorOrStartMsgId, pageSize).then(result => {
         if (result.length > 0) {
           this.cursorOrStartMsgId = result[0].origin.getMsgId();
-          this.dataList = result;
+          this.dataList = this.sortMessages(result);
           this.scrollToLatest();
         }
       }).catch((e: ChatError) => {
@@ -264,13 +277,15 @@ export class ChatViewModel extends BaseChatViewModel{
       ChatRepo.fetchHistoryMessagesFromServer(this.conversation!.conversationId(),
           this.conversation!.getType(),
           this.pageSize,
-          this.getStartMsgId(),
+          this.cursorOrStartMsgId,
           this.fetchOptions)
         .then((result: CursorResult<ChatKitMessage>) => {
           this.isRefreshing = false;
           this.cursorOrStartMsgId = result.getNextCursor();
           if (result.getResult().length > 0) {
-            this.dataList.unshift(...result.getResult());
+            let dataArray = this.dataList;
+            dataArray.push(...result.getResult());
+            this.dataList = this.sortMessages(dataArray);
             this.scrollToTarget(result.getResult().length - 1);
           }
       }).catch((e: ChatError) => {
@@ -285,8 +300,9 @@ export class ChatViewModel extends BaseChatViewModel{
           return;
         }
         if (result.length > 0) {
-          this.cursorOrStartMsgId = result[0].origin.getMsgId();
-          this.dataList.unshift(...result);
+          let dataArray = this.dataList;
+          dataArray.unshift(...result);
+          this.dataList = this.sortMessages(dataArray);
           this.scrollToTarget(result.length - 1);
         }
       }).catch((e: ChatError) => {
@@ -310,6 +326,15 @@ export class ChatViewModel extends BaseChatViewModel{
     this.markAllMessagesAsRead();
     this.getMessages();
     this.ackConversationRead();
+    EventBus.create().on(getMsgDownloadThumbnailEvent(), (params: string[]) => {
+      if (params && params.length > 0) {
+        let messageId = params[0];
+        let message = this.dataList.find(item => item.messageId === messageId);
+        if (message) {
+          this.downloadThumbnail(message.origin);
+        }
+      }
+    })
   }
 
   aboutToDisAppear(): void {
@@ -346,11 +371,22 @@ export class ChatViewModel extends BaseChatViewModel{
     }
   }
 
-  sortMessages(): void {
-    this.dataList.sort((a, b) => {
+  sortMessages(dataList?: ChatKitMessage[]): ChatKitMessage[] {
+    let sortArray = this.dataList;
+    if (dataList) {
+      sortArray = dataList;
+    }
+    sortArray.sort((a, b) => {
       let sortByServerTime = uikit.sdk.getOptions()?.isSortMessageByServerTime() ?? true
       return sortByServerTime ? a.serverTimestamp - b.serverTimestamp : a.localTimestamp - b.localTimestamp
-    })
+    });
+    // 如果是传入的数据，则返回其排序的数组
+    if (dataList) {
+      return sortArray;
+    }
+    // 如果没有传入数据，则对 this.dataList 进行排序，并返回。
+    this.dataList = sortArray;
+    return sortArray;
   }
 
   markAllMessagesAsRead(): void {
@@ -399,6 +435,32 @@ export class ChatViewModel extends BaseChatViewModel{
       return;
     }
     uikit.sdk.chatManager()?.ackMessageRead(message.getConversationId(), message.getMsgId());
+  }
+
+  downloadThumbnail(message: ChatMessage) {
+    let type = message.getType();
+    if (type != ContentType.IMAGE && type != ContentType.VIDEO && type != ContentType.VOICE) {
+      ChatLog.e('不是附件消息！messageId: '+message.getMsgId());
+      return;
+    }
+    let callback: ChatCallback = {
+      onSuccess: () => {
+        this.updateMessage(message.getMsgId());
+      }
+    }
+    message.setMessageStatusCallback(callback);
+    if (type === ContentType.IMAGE || type === ContentType.VIDEO) {
+      let body = ChatTransfer.revertAttachmentMessageBody(message.getBody());
+      if (body?.thumbnail?.thumbnailDownloadStatus !== DownloadStatus.DOWNLOADING) {
+        ChatClient.getInstance().chatManager()?.downloadThumbnail(message);
+      }
+    } else if (type === ContentType.VOICE) {
+      if (message.getBody() instanceof VoiceMessageBody) {
+        if ((message.getBody() as VoiceMessageBody).getDownloadStatus() !== DownloadStatus.DOWNLOADING) {
+          ChatClient.getInstance().chatManager()?.downloadAttachment(message);
+        }
+      }
+    }
   }
 
   updateMessage(messageId: string, newMsg?: ChatMessage | undefined): void {
