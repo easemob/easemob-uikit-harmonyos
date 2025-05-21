@@ -195,6 +195,8 @@ export class ChatViewModel extends BaseChatViewModel{
         }
       })
       EventBus.global().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), ...msgs);
+      // 通知page内的组件消息被撤回
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), ...msgs);
     }
   }
 
@@ -350,6 +352,8 @@ export class ChatViewModel extends BaseChatViewModel{
       this.updateMessage(message.messageId, createRecalledMessage(message.origin));
       // 通知对应的会话进行刷新。
       EventBus.global().emit(getEventStr(KitConstants.EVENTBUS_CONV_FLAG, KitConstants.EVENTBUS_UPDATE_ACTION), this.conversationId);
+      // 通知消息被撤回
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), message.origin);
       this.onRecallMessageResult?.(ChatError.EM_NO_ERROR, message.messageId);
     }).catch((e: ChatError) => {
       this.onRecallMessageResult?.(e.errorCode, message.messageId);
@@ -360,6 +364,8 @@ export class ChatViewModel extends BaseChatViewModel{
     const isDeleted = this.conversation?.removeMessage(message.origin);
     if (isDeleted) {
       deleteFromArray(message, this.dataList);
+      // 通知消息被删除
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "delete"), message.messageId);
       this.onDeleteMessageResult?.(message.messageId);
     }
   }

@@ -163,6 +163,11 @@
       "comment": "消息中被回复消息语音提示内容"
     },
     {
+      "name": "chat_reply_lost_message_tips",
+      "value": "引用的内容不存在",
+      "comment": "消息中被回复消息不存在提示的内容"
+    },
+    {
       "name": "chat_reply_voice_duration",
       "value": "%d ''"
     },

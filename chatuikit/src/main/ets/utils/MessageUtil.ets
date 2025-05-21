@@ -840,12 +840,12 @@ export function isRecalledMessage(origin: ChatMessage): boolean {
  * @param origin
  * @returns
  */
-export function createRecalledMessage(origin: ChatMessage) {
+export function createRecalledMessage(origin: ChatMessage): ChatMessage {
   let isSend = isSender(origin);
   let content = isSend ? getString($r('app.string.chat_msg_recall_content_self')) :
     getString($r('app.string.chat_msg_recall_content_other'), ChatUserInfoManager.getInstance().getNickname(origin));
-  let body = new TextMessageBody(content);
-  let message = isSend ?
+  let body: TextMessageBody = new TextMessageBody(content);
+  let message: ChatMessage = isSend ?
     ChatMessage.createSendMessage(origin.getTo(), body, origin.getChatType()) :
     ChatMessage.createReceiveMessage(origin.getFrom(), body, origin.getChatType(), origin.getMsgId());
   message.setMsgId(origin.getMsgId());

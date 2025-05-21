@@ -17,7 +17,7 @@ import { bottomSheetDialogBuilder, BottomSheetDialogHelper } from '../../shares/
 import { recordBottomSheetDialogBuilder } from '../../shares/dialogs/RecordBottomSheetDialog';
 import { BottomSheetDialogOptions, RecordBottomSheetDialogOptions } from '../../model/DialogOptions';
 import { ChatDialog } from '../../shares/dialogs/ChatDialog';
-import { ArrayList, JSON } from '@kit.ArkTS';
+import { ArrayList } from '@kit.ArkTS';
 import { defaultChatMoreExtendMenus } from '../../internal/configs/KitDefaultData';
 import {
   contentParsed,
@@ -25,11 +25,11 @@ import {
   getDuration,
   getFilename,
   getImageAttachmentResource,
-  getMessageTypeByReply,
   getNicknameFromMessage,
   getUserCardNickname,
   getVideoThumbnailResource,
   isBuilderSpan,
+  isRecalledMessage,
   isUserCardMessage
 } from '../../utils/MessageUtil';
 import {
@@ -42,7 +42,7 @@ import { ChatKitMessage } from '../../model/ChatKitMessage';
 import { LengthMetrics } from '@kit.ArkUI';
 import { getString as getStringRes } from '../../utils/CommonUtils';
 import { KitConstants } from '../../../../../Index';
-import { ChatLog, ContentType } from '@easemob/chatsdk';
+import { ChatMessage, ContentType } from '@easemob/chatsdk';
 import { EventBus, getEventStr } from '../../utils/EventBus';
 import { registerKeyboardHeightChange, unRegisterKeyboardHeightChange } from '../../utils/SoftKeyboardUtils';
 import { ContactModel } from '../../model/ContactModel';
@@ -982,6 +982,7 @@ export struct ChatMessageReplyView {
   @Param isInputView: boolean = false;
   @Event onReplyClear: () => void;
   @Local type?: ContentType = undefined;
+  @Local isLostMessage: boolean = false;
 
   private getTargetTextAttribute() {
     return this.isInputView ? new TextBodySmallAttributeModifier() : new TextBodyMediumAttributeModifier();
@@ -995,19 +996,30 @@ export struct ChatMessageReplyView {
   }
 
   private getMessageType() {
-    if (this.message) {
+    if (this.message && !isRecalledMessage(this.message.origin)) {
       this.type = this.message.origin.getType();
+      this.isLostMessage = false;
     } else {
-      try {
-        this.type = getMessageTypeByReply(this.replyInfo?.[KitConstants.REPLY_MSG_TYPE] ?? undefined);
-      } catch (e) {
-        ChatLog.e(JSON.stringify(e));
-      }
+      this.isLostMessage = true;
     }
   }
 
   aboutToAppear(): void {
     this.getMessageType();
+    EventBus.create().on(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), (params: ChatMessage[]) => {
+      params.forEach(item => {
+        if (item.getMsgId() === this.message?.messageId) {
+          this.isLostMessage = true;
+        }
+      })
+    });
+    EventBus.create().on(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "delete"), (params: string[]) => {
+      params.forEach(item => {
+        if (item === this.message?.messageId) {
+          this.isLostMessage = true;
+        }
+      })
+    });
   }
 
   build() {
@@ -1022,159 +1034,172 @@ export struct ChatMessageReplyView {
               })
               .attributeModifier(new TextBodySmallAttributeModifier())
           }
-          Text(getNicknameFromMessage(this.message?.origin?.getFrom() ?? this.replyInfo?.[KitConstants.REPLY_MSG_SENDER] ?? ''))
-            .fontColor($r('app.color.chat_color_text_special'))
-            .maxLines(1)
-            .textOverflow({overflow: TextOverflow.Ellipsis})
-            .ellipsisMode(EllipsisMode.CENTER)
-            .attributeModifier(new TextLabelSmallAttributeModifier())
+          if (!this.isLostMessage) {
+            Text(getNicknameFromMessage(this.message?.origin?.getFrom() ?? this.replyInfo?.[KitConstants.REPLY_MSG_SENDER] ?? ''))
+              .fontColor($r('app.color.chat_color_text_special'))
+              .maxLines(1)
+              .textOverflow({overflow: TextOverflow.Ellipsis})
+              .ellipsisMode(EllipsisMode.CENTER)
+              .attributeModifier(new TextLabelSmallAttributeModifier())
+          }
         }
         .margin({
           bottom: 4
         })
-        if (this.type === ContentType.TXT) {
-          Text() {
-            ForEach(contentParsed(this.message?.origin ? this.message.origin : (this.replyInfo?.[KitConstants.REPLY_MSG_PREVIEW] ?? '')), (item: TextParseResult) => {
-              if (item.parseType === TextParseType.Text) {
-                Span(item.text)
-                  .fontColor($r('app.color.chat_color_text_secondary'))
-              } else {
-                if (typeof (item.emoji as ResourceStr) !== 'undefined') {
-                  ImageSpan(item.emoji as ResourceStr)
-                    .width(this.getTargetIconSize())
-                    .height(this.getTargetIconSize())
-                    .objectFit(ImageFit.Fill)
-                    .verticalAlign(ImageSpanAlignment.CENTER)
-                }
-              }
-            })
-          }
-          .fontColor($r('app.color.chat_color_text_secondary'))
-          .maxLines(this.isInputView ? 1 : 2)
+        if (this.isLostMessage) {
+          Text($r('app.string.chat_reply_lost_message_tips'))
+          .fontColor($r('app.color.chat_color_text_tertiary'))
+          .maxLines(1)
           .textOverflow({overflow: TextOverflow.Ellipsis})
           .ellipsisMode(EllipsisMode.END)
-          .attributeModifier(this.getTargetTextAttribute())
-        } else if (this.type === ContentType.FILE) {
-          Text() {
-            ImageSpan($r('app.media.chat_icon_reply_file'))
-              .width(this.getTargetIconSize())
-              .height(this.getTargetIconSize())
-              .objectFit(ImageFit.Fill)
-            Span(' ')
-            Span(!this.isInputView && getFilename(this.message?.origin) ? $r('app.string.chat_reply_file_message_tips') : $r('app.string.chat_reply_file_tips'))
-              .fontColor($r('app.color.chat_color_text_secondary'))
-            Span('  ')
-            Span(getFilename(this.message?.origin) ?? '')
-              .fontColor($r('app.color.chat_color_text_secondary'))
-          }
-          .maxLines(this.isInputView ? 1 : 2)
-          .textOverflow({overflow: TextOverflow.Ellipsis})
-          .ellipsisMode(EllipsisMode.CENTER)
-        } else if (this.type === ContentType.VOICE) {
-          Text() {
-            ContainerSpan() {
-              ImageSpan($r('app.media.chat_icon_reply_voice'))
+          .attributeModifier(new TextBodyMediumAttributeModifier())
+        } else {
+          if (this.type === ContentType.TXT) {
+            Text() {
+              ForEach(contentParsed(this.message?.origin ? this.message.origin : (this.replyInfo?.[KitConstants.REPLY_MSG_PREVIEW] ?? '')), (item: TextParseResult) => {
+                if (item.parseType === TextParseType.Text) {
+                  Span(item.text)
+                    .fontColor($r('app.color.chat_color_text_secondary'))
+                } else {
+                  if (typeof (item.emoji as ResourceStr) !== 'undefined') {
+                    ImageSpan(item.emoji as ResourceStr)
+                      .width(this.getTargetIconSize())
+                      .height(this.getTargetIconSize())
+                      .objectFit(ImageFit.Fill)
+                      .verticalAlign(ImageSpanAlignment.CENTER)
+                  }
+                }
+              })
+            }
+            .fontColor($r('app.color.chat_color_text_secondary'))
+            .maxLines(this.isInputView ? 1 : 2)
+            .textOverflow({overflow: TextOverflow.Ellipsis})
+            .ellipsisMode(EllipsisMode.END)
+            .attributeModifier(this.getTargetTextAttribute())
+          } else if (this.type === ContentType.FILE) {
+            Text() {
+              ImageSpan($r('app.media.chat_icon_reply_file'))
                 .width(this.getTargetIconSize())
                 .height(this.getTargetIconSize())
                 .objectFit(ImageFit.Fill)
               Span(' ')
-              Span(!this.isInputView && getDuration(this.message?.origin) ? $r('app.string.chat_reply_voice_message_tips') : $r('app.string.chat_reply_voice_tips'))
+              Span(!this.isInputView && getFilename(this.message?.origin) ? $r('app.string.chat_reply_file_message_tips') : $r('app.string.chat_reply_file_tips'))
                 .fontColor($r('app.color.chat_color_text_secondary'))
               Span('  ')
-              Span(getDuration(this.message?.origin) ? getStringRes($r('app.string.chat_reply_voice_duration'), getDuration(this.message?.origin)) : '')
+              Span(getFilename(this.message?.origin) ?? '')
                 .fontColor($r('app.color.chat_color_text_secondary'))
             }
+            .maxLines(this.isInputView ? 1 : 2)
+            .textOverflow({overflow: TextOverflow.Ellipsis})
+            .ellipsisMode(EllipsisMode.CENTER)
+          } else if (this.type === ContentType.VOICE) {
+            Text() {
+              ContainerSpan() {
+                ImageSpan($r('app.media.chat_icon_reply_voice'))
+                  .width(this.getTargetIconSize())
+                  .height(this.getTargetIconSize())
+                  .objectFit(ImageFit.Fill)
+                Span(' ')
+                Span(!this.isInputView && getDuration(this.message?.origin) ? $r('app.string.chat_reply_voice_message_tips') : $r('app.string.chat_reply_voice_tips'))
+                  .fontColor($r('app.color.chat_color_text_secondary'))
+                Span('  ')
+                Span(getDuration(this.message?.origin) ? getStringRes($r('app.string.chat_reply_voice_duration'), getDuration(this.message?.origin)) : '')
+                  .fontColor($r('app.color.chat_color_text_secondary'))
+              }
+            }
+          } else if (this.type === ContentType.IMAGE) {
+            Text() {
+              ImageSpan($r('app.media.chat_icon_reply_image'))
+                .width(this.getTargetIconSize())
+                .height(this.getTargetIconSize())
+                .objectFit(ImageFit.Fill)
+              Span(' ')
+              Span($r('app.string.chat_reply_image_tips'))
+                .fontColor($r('app.color.chat_color_text_secondary'))
+            }
+            .margin({
+              end: LengthMetrics.vp(16)
+            })
+            .attributeModifier(this.getTargetTipAttribute())
+          } else if (this.type === ContentType.VIDEO) {
+            Text() {
+              ImageSpan($r('app.media.chat_icon_reply_video'))
+                .width(this.getTargetIconSize())
+                .height(this.getTargetIconSize())
+                .objectFit(ImageFit.Fill)
+              Span(' ')
+              Span($r('app.string.chat_reply_video_tips'))
+                .fontColor($r('app.color.chat_color_text_secondary'))
+            }
+            .margin({
+              end: LengthMetrics.vp(16)
+            })
+            .attributeModifier(this.getTargetTipAttribute())
+          } else if (this.type === ContentType.CUSTOM && this.message && isUserCardMessage(this.message?.origin)) {
+            Text() {
+              ImageSpan($r('app.media.chat_icon_reply_user_card'))
+                .width(this.getTargetIconSize())
+                .height(this.getTargetIconSize())
+                .objectFit(ImageFit.Fill)
+              Span(' ')
+              Span(getUserCardNickname(this.message.origin))
+                .fontColor($r('app.color.chat_color_text_secondary'))
+            }
+            .textAlign(TextAlign.Center)
+            .margin({
+              end: LengthMetrics.vp(16)
+            })
+            .attributeModifier(this.getTargetTipAttribute())
+          } else {
+            Text($r('app.string.chat_reply_unkown_type'))
+              .fontColor($r('app.color.chat_color_text_tertiary'))
           }
-        } else if (this.type === ContentType.IMAGE) {
-          Text() {
-            ImageSpan($r('app.media.chat_icon_reply_image'))
-              .width(this.getTargetIconSize())
-              .height(this.getTargetIconSize())
-              .objectFit(ImageFit.Fill)
-            Span(' ')
-            Span($r('app.string.chat_reply_image_tips'))
-              .fontColor($r('app.color.chat_color_text_secondary'))
-          }
-          .margin({
-            end: LengthMetrics.vp(16)
-          })
-          .attributeModifier(this.getTargetTipAttribute())
-        } else if (this.type === ContentType.VIDEO) {
-          Text() {
-            ImageSpan($r('app.media.chat_icon_reply_video'))
-              .width(this.getTargetIconSize())
-              .height(this.getTargetIconSize())
-              .objectFit(ImageFit.Fill)
-            Span(' ')
-            Span($r('app.string.chat_reply_video_tips'))
-              .fontColor($r('app.color.chat_color_text_secondary'))
-          }
-          .margin({
-            end: LengthMetrics.vp(16)
-          })
-          .attributeModifier(this.getTargetTipAttribute())
-        } else if (this.type === ContentType.CUSTOM && this.message && isUserCardMessage(this.message?.origin)) {
-          Text() {
-            ImageSpan($r('app.media.chat_icon_reply_user_card'))
-              .width(this.getTargetIconSize())
-              .height(this.getTargetIconSize())
-              .objectFit(ImageFit.Fill)
-            Span(' ')
-            Span(getUserCardNickname(this.message.origin))
-              .fontColor($r('app.color.chat_color_text_secondary'))
-          }
-          .textAlign(TextAlign.Center)
-          .margin({
-            end: LengthMetrics.vp(16)
-          })
-          .attributeModifier(this.getTargetTipAttribute())
-        } else {
-          Text($r('app.string.chat_reply_unkown_type'))
-            .fontColor($r('app.color.chat_color_text_tertiary'))
         }
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(this.isInputView ? 1 : 0)
-      if (this.type === ContentType.IMAGE) {
-        imageBuilder({
-          alt: $r('app.media.quote_default_image_icon'),
-          src: this.message ? getImageAttachmentResource(this.message) : $r('app.media.quote_default_image_icon'),
-          width: 36,
-          height: 36,
-          imageFit: ImageFit.Fill,
-          attributeModifier: new ChatReplyMediaAttributeModifier()
-        })
-      }
-      if (this.type === ContentType.VIDEO) {
-        Stack() {
+      if (!this.isLostMessage) {
+        if (this.type === ContentType.IMAGE) {
           imageBuilder({
-            alt: $r('app.media.quote_default_video_icon'),
-            src: this.message ? getVideoThumbnailResource(this.message) : $r('app.media.quote_default_video_icon'),
+            alt: $r('app.media.quote_default_image_icon'),
+            src: this.message ? getImageAttachmentResource(this.message) : $r('app.media.quote_default_image_icon'),
             width: 36,
             height: 36,
             imageFit: ImageFit.Fill,
             attributeModifier: new ChatReplyMediaAttributeModifier()
           })
-          imageBuilder({
-            src: $r('app.media.message_video_flag'),
-            width: 24,
-            height: 24,
+        }
+        if (this.type === ContentType.VIDEO) {
+          Stack() {
+            imageBuilder({
+              alt: $r('app.media.quote_default_video_icon'),
+              src: this.message ? getVideoThumbnailResource(this.message) : $r('app.media.quote_default_video_icon'),
+              width: 36,
+              height: 36,
+              imageFit: ImageFit.Fill,
+              attributeModifier: new ChatReplyMediaAttributeModifier()
+            })
+            imageBuilder({
+              src: $r('app.media.message_video_flag'),
+              width: 24,
+              height: 24,
+            })
+          }
+        }
+        if (this.isInputView) {
+          Button({type: ButtonType.Normal, buttonStyle: ButtonStyleMode.TEXTUAL}) {
+            Image($r('app.media.chat_icon_reply_off'))
+              .width(20)
+              .height(20)
+              .objectFit(ImageFit.Fill)
+              .fillColor($r('app.color.chat_color_reply_off_icon_fill'))
+          }
+          .height('100%')
+          .margin({
+            start: LengthMetrics.vp(12)
           })
+          .onClick(this.onReplyClear)
         }
-      }
-      if (this.isInputView) {
-        Button({type: ButtonType.Normal, buttonStyle: ButtonStyleMode.TEXTUAL}) {
-          Image($r('app.media.chat_icon_reply_off'))
-            .width(20)
-            .height(20)
-            .objectFit(ImageFit.Fill)
-            .fillColor($r('app.color.chat_color_reply_off_icon_fill'))
-        }
-        .height('100%')
-        .margin({
-          start: LengthMetrics.vp(12)
-        })
-        .onClick(this.onReplyClear)
       }
     }
     .justifyContent(FlexAlign.Start)
