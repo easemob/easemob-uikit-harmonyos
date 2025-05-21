@@ -7,6 +7,7 @@ import { TextBodyExtraSmallAttributeModifier } from '../../../shares/attributeMo
 import {
   contentParsed,
   isGroupMentionMessage,
+  isRecalledMessage,
   isReplyMessage,
   isSender,
   parseMessageReplyInfo
@@ -72,7 +73,11 @@ export struct MessageTextBubbleView {
         ChatMessageReplyView({
           message: this.replyMessage,
           replyInfo: this.replyInfo,
-          isSender: isSender(this.message.origin)
+          isSender: isSender(this.message.origin),
+          onLostReplyContent: () => {
+            this.replyInfo = undefined;
+            this.replyMessage = undefined;
+          }
         })
           .margin({
             bottom: 2
@@ -81,7 +86,9 @@ export struct MessageTextBubbleView {
             maxWidth: $r('app.float.message_item_bubble_max_width')
           })
           .onClick(() => {
-            this.onMessageReplyClick?.(this.replyInfo?.[KitConstants.REPLY_MSG_ID] ?? '');
+            if (this.replyMessage && !isRecalledMessage(this.replyMessage.origin)) {
+              this.onMessageReplyClick?.(this.replyInfo?.[KitConstants.REPLY_MSG_ID] ?? '');
+            }
           })
       }
       Row() {

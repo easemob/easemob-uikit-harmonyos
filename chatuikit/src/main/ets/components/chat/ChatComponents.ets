@@ -983,6 +983,7 @@ export struct ChatMessageReplyView {
   @Event onReplyClear: () => void;
   @Local type?: ContentType = undefined;
   @Local isLostMessage: boolean = false;
+  @Event onLostReplyContent: () => void;
 
   private getTargetTextAttribute() {
     return this.isInputView ? new TextBodySmallAttributeModifier() : new TextBodyMediumAttributeModifier();
@@ -1010,6 +1011,7 @@ export struct ChatMessageReplyView {
       params.forEach(item => {
         if (item.getMsgId() === this.message?.messageId) {
           this.isLostMessage = true;
+          this.onLostReplyContent?.();
         }
       })
     });
@@ -1017,6 +1019,7 @@ export struct ChatMessageReplyView {
       params.forEach(item => {
         if (item === this.message?.messageId) {
           this.isLostMessage = true;
+          this.onLostReplyContent?.();
         }
       })
     });
