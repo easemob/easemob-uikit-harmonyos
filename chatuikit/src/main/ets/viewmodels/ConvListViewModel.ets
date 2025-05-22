@@ -5,6 +5,7 @@ import { ConversationRepo } from '../repositories/ConversationRepo';
 import { BaseListViewModel } from './ChatViewModel';
 import {
   ChatError,
+  ChatLog,
   ChatMessage,
   ChatMessageListener,
   ConnectionListener,
@@ -18,11 +19,6 @@ import { EventBus, getEventStr } from '../utils/EventBus';
 import { KitConstants } from '../../../../Index';
 import { ConvMenuItem } from '../model/Menu';
 import { ChatConvInfoManager } from '../manager/ChatConvInfoManager';
-import { ChatUserInfoManager } from '../internal/manager/ChatUserInfoManager';
-import { JSON } from '@kit.ArkTS';
-import {
-  ChatLog
-} from '@easemob/chatsdk';
 
 @ObservedV2
 export abstract class BaseConvListViewModel extends BaseListViewModel<ChatKitConversation> {
@@ -205,7 +201,10 @@ export class ConvListViewModel extends BaseConvListViewModel{
         this.errorInfo = ErrorInfo.create('getAllConversationsBySort', ChatError.createError(ChatError.GENERAL_ERROR, "sdk is undefined!"));
         return;
       }
-      this.dataList = result;
+      // 过滤掉默认系统通知内容
+      this.dataList = result.filter(conv => {
+        return conv.conversationId !== KitConstants.DEFAULT_SYSTEM_CONV_ID;
+      });
     }
   }
 

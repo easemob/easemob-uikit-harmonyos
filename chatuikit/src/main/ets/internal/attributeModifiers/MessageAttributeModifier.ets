@@ -127,10 +127,13 @@ export class MessageItemImageAttributeModifier extends CornerRadiusNormalAttribu
 
   applyNormalAttribute(instance: CommonCornerRadiusAttribute): void {
     if (this.cornerStyle === CornerStyle.ROUND) {
-      instance.borderRadius($r('app.float.corner_radius_small_extra'))
+      instance.borderRadius($r('app.float.corner_radius_small_extra'));
     } else if (this.cornerStyle === CornerStyle.CIRCLE) {
       instance.borderRadius($r('app.float.corner_radius_medium'))
     }
+    instance.borderWidth($r('app.float.message_item_image_border_width'));
+    instance.borderColor($r('app.color.chat_color_message_image_border'));
+    instance.borderStyle(BorderStyle.Solid);
   }
 }
 

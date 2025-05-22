@@ -101,6 +101,7 @@ export struct CreateGroupPage {
       }
       .height('100%')
     }
+    .backgroundColor($r('app.color.chat_color_background'))
     .hideTitleBar(true)
     .onReady((context) => {
       if (!this.navPathStack) {

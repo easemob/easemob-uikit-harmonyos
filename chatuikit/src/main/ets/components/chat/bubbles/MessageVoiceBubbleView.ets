@@ -10,6 +10,14 @@ import { LengthMetrics } from '@kit.ArkUI';
 @ComponentV2
 export struct MessageVoiceBubbleView {
   @Require @Param message: ChatKitMessage;
+  @Monitor('message')
+  onMessageChange(iMonitor: IMonitor) {
+    this.voiceResource = $r('app.media.message_voice_receive');
+    this.isSender = isSender(this.message.origin) || this.param.isSender === true;
+    if (this.isSender) {
+      this.voiceResource = $r('app.media.message_voice_send');
+    }
+  }
   @Param param: MessageBubbleModel = new MessageTextModel();
   private declare isSender: boolean;
   @Local voiceResource: Resource = $r('app.media.message_voice_receive');
@@ -131,7 +139,6 @@ export struct MessageVoiceBubbleView {
         .width($r('app.float.message_item_voice_receive_icon_size'))
         .height($r('app.float.message_item_voice_receive_icon_size'))
         .objectFit(ImageFit.Contain)
-        .fillColor(this.isSender ? $r('app.color.chat_color_message_voice_icon_fill_send') : $r('app.color.chat_color_message_voice_icon_fill_receive'))
         .visibility(this.state === AnimationStatus.Running ? Visibility.Hidden : Visibility.Visible)
       ImageAnimator()
         .images([

@@ -1,6 +1,7 @@
 import uikit from '../internal/ChatUIKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ChatLog } from '../../../../Index';
+import { JSON } from '@kit.ArkTS';
 
 export function getString(resource: Resource, arg?: string | number): string {
   try {
@@ -41,4 +42,23 @@ export function appendFlag(key: string, userId?: string): string {
     prefix = userId;
   }
   return prefix + '_' + key;
+}
+
+/**
+ * 解析 JSON 字符串，并排除 '{}' 和 '[]' 这两种情况。
+ * @param json
+ * @returns {Object | null}
+ */
+export function parseJson(json?: string) {
+  if (!json) {
+    return null;
+  }
+  if (typeof json === 'object') {
+    return json;
+  }
+  let result = JSON.parse(json);
+  if (JSON.stringify(result) === '{}' || JSON.stringify(result) === '[]') {
+    return null;
+  }
+  return result;
 }

@@ -32,7 +32,7 @@ import { ChatReplyContentType } from '../model/ChatReplyContentType';
 import { JSON } from '@kit.ArkTS';
 import { MessageContent } from '../model/Message';
 import { RichEditorSpanModel } from '../model/builder/MessageComponentModel';
-import { getString } from './CommonUtils';
+import { getString, parseJson } from './CommonUtils';
 import { ChatUserInfoManager } from '../internal/manager/ChatUserInfoManager';
 import { isCurrentUser } from './GroupUtil';
 import { ChatUser, MessageUserInfo } from '../internal/model/ChatUser';
@@ -387,6 +387,12 @@ export function getMsgSendResultEvent(): string {
   return getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "send");
 }
 
+/**
+ * 获取图片消息或者视频消息的缩略图或者首帧。
+ * @param message
+ * @param onNeedDownload
+ * @returns
+ */
 function getImageThumbnailResource(message: ChatKitMessage, onNeedDownload?: (messageId: string) => void): ResourceStr | undefined {
   let attachment = getAttachmentInfo(message);
   if (message.thumbnailDownloadStatus === DownloadStatus.SUCCESS) {
@@ -402,45 +408,60 @@ function getImageThumbnailResource(message: ChatKitMessage, onNeedDownload?: (me
       onNeedDownload?.(message.messageId);
     }
     return undefined;
+  } else if (message.thumbnailDownloadStatus === DownloadStatus.PENDING) {
+    if (isLocalImageAccess(message.origin, true)) {
+      let path = attachment?.thumbnail?.thumbnailLocalPath;
+      return path ? fileUri.getUriFromPath(path) : undefined;
+    } else {
+      if (!StringUtil.isEmpty(attachment?.thumbnail?.thumbnailRemoteUrl)) {
+        onNeedDownload?.(message.messageId);
+      }
+      return undefined;
+    }
   } else {
     return undefined;
   }
 }
 
-function getImageThumbnailLocalPath(message: ChatMessage): string | undefined {
+function getImageThumbnailLocalPath(message: ChatMessage, isIncludeRemoteUrl?: boolean): string | undefined {
   const attachment = getAttachmentInfo(message);
-  if (attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.SUCCESS) {
+  if (attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.SUCCESS || attachment?.thumbnail?.thumbnailDownloadStatus === DownloadStatus.PENDING) {
     if (isLocalImageAccess(message, true)) {
       return attachment?.thumbnail?.thumbnailLocalPath;
     }
   }
-  return undefined;
+  return isIncludeRemoteUrl ? attachment?.thumbnail?.thumbnailRemoteUrl : undefined;
 }
 
 /**
  * 获取图片消息本地地址。
  * @param { ChatMessage } message - 视频消息。
+ * @param { boolean } isIncludeRemoteUrl - 是否包括远程地址。
  * @returns
  */
-function getImageAttachmentLocalPath(message: ChatMessage): string | undefined {
+function getImageAttachmentLocalPath(message: ChatMessage, isIncludeRemoteUrl?: boolean): string | undefined {
   const attachment = getAttachmentInfo(message);
   if (!attachment) {
     return undefined;
   }
   const type = message.getType();
   if (type === ContentType.IMAGE) {
-    if (attachment.downloadStatus === DownloadStatus.SUCCESS) {
+    if (attachment.downloadStatus === DownloadStatus.SUCCESS || attachment.downloadStatus === DownloadStatus.PENDING) {
       if (isLocalImageAccess(message)) {
         return attachment.localPath;
       } else {
-        return getImageThumbnailLocalPath(message);
+        return getImageThumbnailLocalPath(message, isIncludeRemoteUrl);
       }
     } else {
-      return getImageThumbnailLocalPath(message);
+      return getImageThumbnailLocalPath(message, isIncludeRemoteUrl);
     }
   } else if (type === ContentType.VIDEO) {
-    if (isLocalImageAccess(message, true)) {
-      return attachment?.thumbnail?.thumbnailLocalPath;
+    if (attachment.downloadStatus === DownloadStatus.SUCCESS || attachment.downloadStatus === DownloadStatus.PENDING) {
+      if (isLocalImageAccess(message, true)) {
+        return attachment?.thumbnail?.thumbnailLocalPath;
+      }
+    } else {
+      return isIncludeRemoteUrl ? getImageThumbnailLocalPath(message, isIncludeRemoteUrl) : undefined;
     }
   }
   return undefined;
@@ -485,7 +506,7 @@ export async function getImageAttachmentSize(message: ChatMessage): Promise<imag
   if (!localPath) {
     return Promise.reject(ChatError.createError(ChatError.GENERAL_ERROR, 'Local path is undefined.'));
   }
-  return FileUtil.getImageSize(getContext(), localPath);
+  return await FileUtil.getImageSize(getContext(), localPath);
 }
 
 /**
@@ -551,11 +572,11 @@ export function getMessageFileLengthStr(fileLength: number | undefined) {
     return '';
   }
   if (fileLength < 1024) {
-    return fileLength + 'b';
+    return fileLength + 'B';
   } else if (fileLength < 1024 * 1024) {
-    return (fileLength / 1024).toFixed() + 'kb';
+    return (fileLength / 1024).toFixed() + 'KB';
   } else {
-    return (fileLength / (1024 * 1024)).toFixed() + 'mb';
+    return (fileLength / (1024 * 1024)).toFixed() + 'MB';
   }
 }
 
@@ -755,8 +776,11 @@ export function parseMessageReplyInfo(message: ChatMessage | ChatKitMessage) {
   if (!isReplyMessage(message)) {
     return undefined;
   }
-  let ext = msg.ext().get(KitConstants.REPLY_MSG_QUOTE) as string;
-  return JSON.parse(ext) as Record<string, string>;
+  let ext = msg.ext().get(KitConstants.REPLY_MSG_QUOTE);
+  if (typeof ext === 'string') {
+    return JSON.parse(ext) as Record<string, string>;
+  }
+  return ext as Record<string, string>;
 }
 
 /**
@@ -816,12 +840,12 @@ export function isRecalledMessage(origin: ChatMessage): boolean {
  * @param origin
  * @returns
  */
-export function createRecalledMessage(origin: ChatMessage) {
+export function createRecalledMessage(origin: ChatMessage): ChatMessage {
   let isSend = isSender(origin);
   let content = isSend ? getString($r('app.string.chat_msg_recall_content_self')) :
     getString($r('app.string.chat_msg_recall_content_other'), ChatUserInfoManager.getInstance().getNickname(origin));
-  let body = new TextMessageBody(content);
-  let message = isSend ?
+  let body: TextMessageBody = new TextMessageBody(content);
+  let message: ChatMessage = isSend ?
     ChatMessage.createSendMessage(origin.getTo(), body, origin.getChatType()) :
     ChatMessage.createReceiveMessage(origin.getFrom(), body, origin.getChatType(), origin.getMsgId());
   message.setMsgId(origin.getMsgId());
@@ -1020,7 +1044,7 @@ export function getUserInfoFromMessage(message: ChatMessage): ChatUser | undefin
   if (isIncludeUserInfo(message)) {
     let ext = message.ext();
     let userJsonStr = ext.get(KitConstants.MESSAGE_EXT_USER_INFO_KEY) as string;
-    let userInfo: object | null = JSON.parse(userJsonStr);
+    let userInfo: object | null = parseJson(userJsonStr);
     if (userInfo) {
       let keys = Object.keys(userInfo);
       let user = new ChatUser(message.getFrom());

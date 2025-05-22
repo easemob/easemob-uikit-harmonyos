@@ -26,6 +26,7 @@ import { ChatUserInfoManager } from '../manager/ChatUserInfoManager';
 import { mentionManager } from '../../manager/GroupChatMentionManager';
 import { createRecalledMessage } from '../../utils/MessageUtil';
 import { ChatTransfer, CommonError } from '../ChatTransfer';
+import { NotificationRepository } from '../../repositories/NotificationRepository';
 
 export class ChatListenersWrapper {
   private connectListeners = new ArrayList<ConnectionListener>();
@@ -218,6 +219,8 @@ export class ChatListenersWrapper {
     },
     
     onContactInvited: (userId: string, reason: string): void => {
+      // 创建本地通知消息，并保存到本地。
+      NotificationRepository.createNotification(userId, reason);
       this.notifyContactListener(listener => listener.onContactInvited?.(userId, reason));
     },
     

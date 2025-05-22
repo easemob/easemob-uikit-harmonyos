@@ -41,8 +41,8 @@ export function imageBuilder(param: ImageModel) {
           .visibility(param.visible ?? Visibility.Visible)
           .draggable(false)
           .margin(param.margin)
-          .attributeModifier(param.attributeModifier)
           .border(param.border ?? {})
+          .attributeModifier(param.attributeModifier)
           .width(param.width)
           .height(param.height)
       } else if (param.width) {
@@ -53,8 +53,8 @@ export function imageBuilder(param: ImageModel) {
           .visibility(param.visible ?? Visibility.Visible)
           .draggable(false)
           .margin(param.margin)
-          .attributeModifier(param.attributeModifier)
           .border(param.border ?? {})
+          .attributeModifier(param.attributeModifier)
           .width(param.width)
       } else {
         Image(param.src)
@@ -64,8 +64,8 @@ export function imageBuilder(param: ImageModel) {
           .visibility(param.visible ?? Visibility.Visible)
           .draggable(false)
           .margin(param.margin)
-          .attributeModifier(param.attributeModifier)
           .border(param.border ?? {})
+          .attributeModifier(param.attributeModifier)
           .width(param.height)
       }
     } else {
@@ -76,8 +76,8 @@ export function imageBuilder(param: ImageModel) {
         .visibility(param.visible ?? Visibility.Visible)
         .draggable(false)
         .margin(param.margin)
-        .attributeModifier(param.attributeModifier)
         .border(param.border ?? {})
+        .attributeModifier(param.attributeModifier)
     }
   }
 

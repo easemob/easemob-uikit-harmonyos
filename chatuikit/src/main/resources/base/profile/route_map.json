@@ -79,6 +79,22 @@
       "data": {
         "description" : "Share contact to another"
       }
+    },
+    {
+      "name": "NewConversationPage",
+      "pageSourceFile": "src/main/ets/pages/NewConversationPage.ets",
+      "buildFunction": "NewConversationPageBuilder",
+      "data": {
+        "description" : "Select a contact to start a new conversation"
+      }
+    },
+    {
+      "name": "NewRequestsPage",
+      "pageSourceFile": "src/main/ets/pages/NewRequestsPage.ets",
+      "buildFunction": "NewRequestsPageBuilder",
+      "data": {
+        "description" : "New request list page"
+      }
     }
   ]
 }

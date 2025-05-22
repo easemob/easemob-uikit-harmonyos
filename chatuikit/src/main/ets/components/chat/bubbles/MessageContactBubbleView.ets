@@ -56,7 +56,7 @@ export struct MessageContactBubbleView {
         .justifyContent(FlexAlign.Start)
 
         Divider()
-          .strokeWidth(1)
+          .strokeWidth(0.5)
           .color(this.isSender ? $r('app.color.chat_color_message_user_card_send_divider') : $r('app.color.chat_color_message_user_card_receive_divider'))
           .margin({
             top: 12,

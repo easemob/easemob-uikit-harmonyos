@@ -28,11 +28,11 @@ export struct ConversationListPage {
   @Param titleOperationMenus: MenuItem[] = defaultConvOperationMenus((id: string | number) => {
     if (typeof id === 'string') {
       if (id === KitConstants.CONV_PAGE_ACTION_NEW_CHAT) {
-
+        this.navPathStack?.pushPath({name: "NewConversationPage"});
       } else if (id === KitConstants.CONV_PAGE_ACTION_ADD_CONTACT) {
-        this.pathStack?.pushPath({name: "AddContactDialogPage"});
+        this.navPathStack?.pushPath({name: "AddContactDialogPage"});
       } else if (id === KitConstants.CONV_PAGE_ACTION_CREATE_GROUP) {
-        this.pathStack?.pushPath({name: "CreateGroupPage"});
+        this.navPathStack?.pushPath({name: "CreateGroupPage"});
       }
     }
 
@@ -41,7 +41,7 @@ export struct ConversationListPage {
     ChatLog.d("click avatar");
   };
   @Event onBackPress?: () => void = () => {
-    this.pathStack?.pop();
+    this.navPathStack?.pop();
   };
   @Event onSearchClick: KitCallback = () => {
     this.navPathStack?.pushPath({name: "SearchConversationPage"});
@@ -79,6 +79,7 @@ export struct ConversationListPage {
       }
     }
     .hideTitleBar(true)
+    .backgroundColor($r('app.color.chat_color_background'))
     .onReady((context) => {
       if (!this.navPathStack) {
         this.navPathStack = context.pathStack

@@ -39,29 +39,46 @@ export struct ContactListPage {
   @Event onMoreActionClick: KitCallback<number> = (index) => {
     if (index === 0) {
       this.navPathStack?.pushPath({name: "GroupListPage"});
+    } else if (index === 1) {
+      this.navPathStack?.pushPath({name: "NewRequestsPage"});
     }
   }
 
   showAddContactDialog() {
-    this.pathStack?.pushPath({name: "AddContactDialogPage"});
+    this.navPathStack?.pushPath({name: "AddContactDialogPage"});
   }
 
   @Builder
   moreActionBuilder(onClick: KitCallback<number>) {
     ListItem() {
-      ComposeBadgeListItem({
-        title: $r('app.string.group_chat'),
-        badgeCount: this.viewModel.joinedGroupCount,
-        badgeStyle: {
-          color: $r('app.color.chat_color_text_secondary'),
-          fontSize: 14,
-          badgeColor: Color.Transparent,
-          borderColor: Color.Transparent
-        }
-      })
-        .onClick(() => {
-          onClick(0);
+      Column() {
+        ComposeBadgeListItem({
+          title: $r('app.string.new_request'),
+          badgeCount: this.viewModel.newRequestCount,
+          badgeStyle: {
+            color: $r('app.color.chat_color_text_primary_contrary'),
+            fontSize: 14,
+            badgeColor: $r('app.color.chat_color_primary'),
+            borderColor: $r('app.color.chat_color_primary')
+          }
         })
+          .onClick(() => {
+            onClick(1);
+          })
+        ComposeBadgeListItem({
+          title: $r('app.string.group_chat'),
+          badgeCount: this.viewModel.joinedGroupCount,
+          badgeStyle: {
+            color: $r('app.color.chat_color_text_secondary'),
+            fontSize: 14,
+            badgeColor: Color.Transparent,
+            borderColor: Color.Transparent
+          }
+        })
+          .onClick(() => {
+            onClick(0);
+          })
+      }
     }
   }
 
@@ -94,6 +111,7 @@ export struct ContactListPage {
       .height('100%')
     }
     .hideTitleBar(true)
+    .backgroundColor($r('app.color.chat_color_background'))
     .onReady((context) => {
       if (!this.navPathStack) {
         this.navPathStack = context.pathStack
