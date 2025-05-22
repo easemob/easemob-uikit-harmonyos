@@ -8,7 +8,7 @@ import {
   TextBodySmallAttributeModifier,
   TextTitleMediumAttributeModifier
 } from '../attributeModifiers/TextAttributeModifiers';
-import { avatarBuilder, emojiBuilder, imageBuilder } from '../builders/CommonBulders';
+import { avatarBuilder, badgeBuilder, emojiBuilder, imageBuilder } from '../builders/CommonBulders';
 import { LengthMetrics, OperateIcon, TextModifier, UIUtils } from '@kit.ArkUI';
 import { KitCallback } from '../../interfaces/CommonCallback';
 import { getDefaultBorderRadius } from '../../internal/utils/UIKitUtils';
@@ -431,20 +431,17 @@ export struct ComposeBadgeListItem {
           imageBuilder(this.srcParam)
         }
 
-        Badge({
+        Text(this.title)
+          .fontColor(this.titleColor)
+          .attributeModifier(this.titleAttribute)
+
+        Blank()
+
+        badgeBuilder({
           count: this.badgeCount,
           style: this.badgeStyle,
           position: BadgePosition.Right
-        }) {
-          Text(this.title)
-            .fontColor(this.titleColor)
-            .attributeModifier(this.titleAttribute)
-        }
-        .margin({
-          start: this.srcParam === undefined ? LengthMetrics.vp(16) : LengthMetrics.vp(12),
-          end: this.operateIconVisible ? LengthMetrics.vp(12) : LengthMetrics.vp(16)
         })
-        .layoutWeight(1)
 
         if (this.operateIconVisible) {
           imageBuilder({
@@ -452,11 +449,16 @@ export struct ComposeBadgeListItem {
             width: 20,
             height: 20,
             imageFit: ImageFit.Fill,
-            margin: {right: 16}
+            margin: {right: 16, left: 5}
           })
         }
       }
+      .alignItems(VerticalAlign.Center)
       .width('100%')
+      .padding({
+        start: this.srcParam === undefined ? LengthMetrics.vp(16) : LengthMetrics.vp(12),
+        end: this.operateIconVisible ? LengthMetrics.vp(12) : LengthMetrics.vp(16)
+      })
       .layoutWeight(1)
 
       if (this.dividerVisible) {

@@ -51,9 +51,8 @@ export struct ChatView {
    * 如果要进行页面跳转，需要传入 NavPathStack 参数。
    */
   @Param pathStack?: NavPathStack = undefined;
-  private listScroller: Scroller = new Scroller();
   // 消息列表相关viewModel
-  @Param viewModel: BaseChatViewModel = new ChatViewModel(this.conversationId, this.chatType, this.listScroller);
+  @Param viewModel: BaseChatViewModel = new ChatViewModel(this.conversationId, this.chatType);
   // 消息发送相关viewModel
   @Param messageViewModel: BaseMessageViewModel = new MessageViewModel(this.conversationId, this.chatType);
   @Monitor('viewModel.errorInfo')
@@ -208,7 +207,7 @@ export struct ChatView {
       if (isReplyMessage(message)) {
         this.replyMessage = undefined;
       }
-      this.listScroller.scrollEdge(Edge.Bottom)
+      this.viewModel.scrollToLatest();
     }
     this.messageViewModel.onMessageSendSuccess = (oldMsgId, message: ChatMessage) => {
       ChatLog.d('update messages');
@@ -453,7 +452,7 @@ export struct ChatView {
   build() {
     Column() {
       Refresh({refreshing: $$this.viewModel.isRefreshing}) {
-        List({scroller: this.listScroller}) {
+        List({scroller: this.viewModel.listScroller}) {
           Repeat<ChatKitMessage>(this.viewModel.dataList)
             .each((obj: RepeatItem<ChatKitMessage>) => {})
             .virtualScroll()
@@ -560,7 +559,7 @@ export struct ChatView {
         })
         .onAreaChange((oldValue: Area, newValue: Area) => {
           if (this.isChatInputMenuViewAppear) {
-            this.listScroller.scrollToIndex(this.viewModel.dataList.length - 1, true, ScrollAlign.END);
+            this.viewModel.scrollToTarget(this.viewModel.dataList.length - 1, true, ScrollAlign.END);
           }
         })
     }

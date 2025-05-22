@@ -1,17 +1,23 @@
 import {
+  ChatCallback,
   ChatClient,
   ChatError,
+  ChatLog,
   ChatMessage,
   ChatMessageListener,
   ChatType,
   ConnectionListener,
+  ContentType,
   Conversation,
   ConversationListener,
   CursorResult,
+  DownloadStatus,
   FetchMessageOption,
-  RecallMessageInfo
+  RecallMessageInfo,
+  VoiceMessageBody
 } from '@easemob/chatsdk';
 import { KitConstants } from '../../../../Index';
+import { ChatTransfer } from '../internal/ChatTransfer';
 import uikit from '../internal/ChatUIKit';
 import { deleteFromArray, update } from '../internal/utils/ArrayUtils';
 import { mentionManager } from '../manager/GroupChatMentionManager';
@@ -22,6 +28,7 @@ import { EventBus, getEventStr } from '../utils/EventBus';
 import {
   createRecalledMessage,
   defaultFetchMessagesOptions,
+  getMsgDownloadThumbnailEvent,
   isMediaMessage,
   isSender
 } from '../utils/MessageUtil';
@@ -55,6 +62,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
   protected chatType: ChatType = ChatType.Chat;
   protected conversation?: Conversation;
   protected isFetchMessagesFromServer: boolean = false;
+  listScroller: Scroller = new Scroller();
   onDeleteMessageResult?: (messageId: string) => void;
   onRecallMessageResult?: (code: number, messageId: string) => void;
   onReceivedMessage?: (message: ChatMessage) => void;
@@ -80,7 +88,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
   /**
    * 对消息列表进行排序。
    */
-  abstract sortMessages();
+  abstract sortMessages(dataList?: ChatKitMessage[]): ChatKitMessage[] | void;
 
   /**
    * 设置是否从服务器拉取消息，默认为false。
@@ -122,6 +130,12 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
   abstract ackMessageRead(message: ChatMessage, isCheckMedia?: boolean);
 
   /**
+   * 下载图片缩略图，视频首帧或者语音消息。
+   * @param message
+   */
+  abstract downloadThumbnail(message: ChatMessage);
+
+  /**
    * 更新消息状态。
    * @param messageId
    * @param newMsg
@@ -137,7 +151,7 @@ export abstract class BaseChatViewModel extends BaseListViewModel<ChatKitMessage
    * 滑动到指定位置。
    * @param target
    */
-  abstract scrollToTarget(target: number);
+  abstract scrollToTarget(target: number, smooth?: boolean, align?: ScrollAlign, options?: ScrollToIndexOptions);
 
 }
 
@@ -145,7 +159,6 @@ export class ChatViewModel extends BaseChatViewModel{
   protected cursorOrStartMsgId: string = '';
   protected pageSize: number = 20;
   protected fetchOptions: FetchMessageOption = defaultFetchMessagesOptions();
-  protected listScroller: Scroller = new Scroller();
   protected isLoadedData: boolean = false;
 
   private messageListener: ChatMessageListener = {
@@ -172,7 +185,6 @@ export class ChatViewModel extends BaseChatViewModel{
       }
     },
     onMessageRecalled: (recallInfo: RecallMessageInfo[]) => {
-      console.log("onMessageRecalled size: "+recallInfo.length);
       let msgs: ChatMessage[] = [];
       recallInfo.forEach(item => {
         if (this.isCurrentConv(item.getConversationId())) {
@@ -183,6 +195,8 @@ export class ChatViewModel extends BaseChatViewModel{
         }
       })
       EventBus.global().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), ...msgs);
+      // 通知page内的组件消息被撤回
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), ...msgs);
     }
   }
 
@@ -207,12 +221,11 @@ export class ChatViewModel extends BaseChatViewModel{
     }
   }
 
-  constructor(conversationId: string, chatType: ChatType = ChatType.Chat, listScroller: Scroller) {
+  constructor(conversationId: string, chatType: ChatType = ChatType.Chat) {
     super();
     this.conversationId = conversationId;
     this.chatType = chatType;
     this.conversation = ChatClient.getInstance().chatManager()?.getConversation(conversationId, chatType as number, true);
-    this.listScroller = listScroller;
   }
 
   private isCurrentConv(message: ChatMessage | string): boolean {
@@ -235,7 +248,7 @@ export class ChatViewModel extends BaseChatViewModel{
     if (this.isFetchMessagesFromServer) {
       ChatRepo.fetchHistoryMessagesFromServer(this.conversation!.conversationId(), this.conversation!.getType(), pageSize, cursorOrStartMsgId, fetchOptions).then((result: CursorResult<ChatKitMessage>) => {
         this.cursorOrStartMsgId = result.getNextCursor();
-        this.dataList = result.getResult();
+        this.dataList = this.sortMessages(result.getResult());
         this.scrollToLatest();
       }).catch((e: ChatError) => {
         this.errorInfo = ErrorInfo.create('fetchHistoryMessagesFromServer', e);
@@ -244,7 +257,7 @@ export class ChatViewModel extends BaseChatViewModel{
       ChatRepo.loadMoreMessages(this.conversation!, cursorOrStartMsgId, pageSize).then(result => {
         if (result.length > 0) {
           this.cursorOrStartMsgId = result[0].origin.getMsgId();
-          this.dataList = result;
+          this.dataList = this.sortMessages(result);
           this.scrollToLatest();
         }
       }).catch((e: ChatError) => {
@@ -266,13 +279,15 @@ export class ChatViewModel extends BaseChatViewModel{
       ChatRepo.fetchHistoryMessagesFromServer(this.conversation!.conversationId(),
           this.conversation!.getType(),
           this.pageSize,
-          this.getStartMsgId(),
+          this.cursorOrStartMsgId,
           this.fetchOptions)
         .then((result: CursorResult<ChatKitMessage>) => {
           this.isRefreshing = false;
           this.cursorOrStartMsgId = result.getNextCursor();
           if (result.getResult().length > 0) {
-            this.dataList.unshift(...result.getResult());
+            let dataArray = this.dataList;
+            dataArray.push(...result.getResult());
+            this.dataList = this.sortMessages(dataArray);
             this.scrollToTarget(result.getResult().length - 1);
           }
       }).catch((e: ChatError) => {
@@ -287,8 +302,9 @@ export class ChatViewModel extends BaseChatViewModel{
           return;
         }
         if (result.length > 0) {
-          this.cursorOrStartMsgId = result[0].origin.getMsgId();
-          this.dataList.unshift(...result);
+          let dataArray = this.dataList;
+          dataArray.unshift(...result);
+          this.dataList = this.sortMessages(dataArray);
           this.scrollToTarget(result.length - 1);
         }
       }).catch((e: ChatError) => {
@@ -312,6 +328,15 @@ export class ChatViewModel extends BaseChatViewModel{
     this.markAllMessagesAsRead();
     this.getMessages();
     this.ackConversationRead();
+    EventBus.create().on(getMsgDownloadThumbnailEvent(), (params: string[]) => {
+      if (params && params.length > 0) {
+        let messageId = params[0];
+        let message = this.dataList.find(item => item.messageId === messageId);
+        if (message) {
+          this.downloadThumbnail(message.origin);
+        }
+      }
+    })
   }
 
   aboutToDisAppear(): void {
@@ -327,6 +352,8 @@ export class ChatViewModel extends BaseChatViewModel{
       this.updateMessage(message.messageId, createRecalledMessage(message.origin));
       // 通知对应的会话进行刷新。
       EventBus.global().emit(getEventStr(KitConstants.EVENTBUS_CONV_FLAG, KitConstants.EVENTBUS_UPDATE_ACTION), this.conversationId);
+      // 通知消息被撤回
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "recall"), message.origin);
       this.onRecallMessageResult?.(ChatError.EM_NO_ERROR, message.messageId);
     }).catch((e: ChatError) => {
       this.onRecallMessageResult?.(e.errorCode, message.messageId);
@@ -337,6 +364,8 @@ export class ChatViewModel extends BaseChatViewModel{
     const isDeleted = this.conversation?.removeMessage(message.origin);
     if (isDeleted) {
       deleteFromArray(message, this.dataList);
+      // 通知消息被删除
+      EventBus.create().emit(getEventStr(KitConstants.EVENTBUS_MESSAGE_FLAG, "delete"), message.messageId);
       this.onDeleteMessageResult?.(message.messageId);
     }
   }
@@ -348,11 +377,22 @@ export class ChatViewModel extends BaseChatViewModel{
     }
   }
 
-  sortMessages(): void {
-    this.dataList.sort((a, b) => {
+  sortMessages(dataList?: ChatKitMessage[]): ChatKitMessage[] {
+    let sortArray = this.dataList;
+    if (dataList) {
+      sortArray = dataList;
+    }
+    sortArray.sort((a, b) => {
       let sortByServerTime = uikit.sdk.getOptions()?.isSortMessageByServerTime() ?? true
       return sortByServerTime ? a.serverTimestamp - b.serverTimestamp : a.localTimestamp - b.localTimestamp
-    })
+    });
+    // 如果是传入的数据，则返回其排序的数组
+    if (dataList) {
+      return sortArray;
+    }
+    // 如果没有传入数据，则对 this.dataList 进行排序，并返回。
+    this.dataList = sortArray;
+    return sortArray;
   }
 
   markAllMessagesAsRead(): void {
@@ -403,6 +443,32 @@ export class ChatViewModel extends BaseChatViewModel{
     uikit.sdk.chatManager()?.ackMessageRead(message.getConversationId(), message.getMsgId());
   }
 
+  downloadThumbnail(message: ChatMessage) {
+    let type = message.getType();
+    if (type != ContentType.IMAGE && type != ContentType.VIDEO && type != ContentType.VOICE) {
+      ChatLog.e('不是附件消息！messageId: '+message.getMsgId());
+      return;
+    }
+    let callback: ChatCallback = {
+      onSuccess: () => {
+        this.updateMessage(message.getMsgId());
+      }
+    }
+    message.setMessageStatusCallback(callback);
+    if (type === ContentType.IMAGE || type === ContentType.VIDEO) {
+      let body = ChatTransfer.revertAttachmentMessageBody(message.getBody());
+      if (body?.thumbnail?.thumbnailDownloadStatus !== DownloadStatus.DOWNLOADING) {
+        ChatClient.getInstance().chatManager()?.downloadThumbnail(message);
+      }
+    } else if (type === ContentType.VOICE) {
+      if (message.getBody() instanceof VoiceMessageBody) {
+        if ((message.getBody() as VoiceMessageBody).getDownloadStatus() !== DownloadStatus.DOWNLOADING) {
+          ChatClient.getInstance().chatManager()?.downloadAttachment(message);
+        }
+      }
+    }
+  }
+
   updateMessage(messageId: string, newMsg?: ChatMessage | undefined): void {
     if (newMsg) {
       update(messageId, new ChatKitMessage(newMsg), this.dataList);
@@ -417,9 +483,9 @@ export class ChatViewModel extends BaseChatViewModel{
     })
   }
 
-  scrollToTarget(target: number) {
+  scrollToTarget(target: number, smooth?: boolean, align?: ScrollAlign, options?: ScrollToIndexOptions) {
     setTimeout(() => {
-      this.listScroller.scrollToIndex(target);
+      this.listScroller.scrollToIndex(target, smooth, align, options);
     })
   }
 

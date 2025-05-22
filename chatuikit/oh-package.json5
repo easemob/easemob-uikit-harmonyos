@@ -1,16 +1,17 @@
 {
   "name": "@easemob/chatuikit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Easemob Chat UIKit for HarmonyOS.",
   "keywords": ['easemob', 'chat', 'uikit', 'IM'],
   "main": "Index.ets",
   "author": "EaseMob",
   "license": "MIT",
   "dependencies": {
-    "@easemob/chatsdk": "file:./libs/chatsdk-1.5.3.har",
+    "@easemob/chatsdk": "file:./libs/chatsdk-1.7.0.har",
     "@ohos/pinyin4js": "^2.0.0"
   },
   "compatibleSdkVersion": '5.0.0(12)',
   "homepage": 'https://www.easemob.com/',
+  "repository": "https://github.com/easemob/easemob-uikit-harmonyos",
   "artifactType": "original"
 }

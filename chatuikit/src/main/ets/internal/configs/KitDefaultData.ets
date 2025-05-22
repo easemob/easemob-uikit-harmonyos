@@ -235,6 +235,15 @@ export function defaultConvItemMenus(action: (id: string | number, conv: ChatKit
 export function defaultConvOperationMenus(action: (id: string | number) => void): MenuItem[] {
   return [
     {
+      id: KitConstants.CONV_PAGE_ACTION_NEW_CHAT,
+      value: $r('app.string.conv_page_action_new_chat'),
+      icon: $r('app.media.chat_icon_new_chat'),
+      showAsAction: ShowAsAction.never,
+      action: (id) => {
+        action(id);
+      }
+    },
+    {
       id: KitConstants.CONV_PAGE_ACTION_ADD_CONTACT,
       value: $r('app.string.conv_page_action_add_contact'),
       icon: $r('app.media.chat_icon_add_contact'),

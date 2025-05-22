@@ -49,6 +49,7 @@ export struct MessageItemView {
   @BuilderParam customMessageContent: () => void = this.messageItemContentBuilder;
   @Local messageMenus: MessageMenuItem[] = [];
   @Local bgColor: ResourceColor = Color.Transparent;
+  @Local longMenusWidth?: Length;
   @Consumer("message_item_menus_provider") messageItemMenusInnerProvider: (message: ChatKitMessage) => MessageMenuItem[] = message => [];
 
   @Builder
@@ -81,7 +82,21 @@ export struct MessageItemView {
         return item.id + '';
       })
     }
-    .width(this.messageMenus.length > 5 ? 348: this.messageMenus.length * 68)
+    .onSizeChange((oldV, newV) => {
+      // 为了解决设置Flex宽度随条目数变化动态调节的问题
+      let totalW = this.messageMenus.length * 68;
+      let width = newV.width as number;
+      let height = newV.height as number;
+      if (width > totalW) {
+        this.longMenusWidth = totalW;
+      }
+      if (height > 58 * 2) {
+        let number = Math.floor(width / 68);
+        this.longMenusWidth = number * 68;
+      }
+    })
+    .width(this.longMenusWidth ?? 'auto')
+    .layoutWeight(this.longMenusWidth === undefined ? 1 : 0)
     .padding({
       top: 12,
       bottom: 12
@@ -99,7 +114,9 @@ export struct MessageItemView {
           aboutToAppear: () => {
             let messageMenus = this.messageItemMenusInnerProvider(this.message);
             this.messageMenus = filterMessageMenu(messageMenus, this.message.origin);
-          }
+          },
+          backgroundColor: $r('sys.color.background_primary'),
+          borderRadius: $r('app.float.corner_radius_small_extra')
         })
     }
     .alignRules({

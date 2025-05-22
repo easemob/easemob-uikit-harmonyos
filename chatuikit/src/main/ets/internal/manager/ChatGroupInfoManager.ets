@@ -43,7 +43,7 @@ export class ChatGroupInfoManager {
     let provider = uikit.profileProvider;
     if (provider) {
       let profile = await provider.fetchProfile(undefined, groupId) as ChatGroupProfile
-      if (profile && profile instanceof ChatGroupProfile) {
+      if (profile && profile instanceof ChatGroupProfile && profile.id === groupId) {
         this.refreshGroupInfoCache(profile);
         return profile
       }

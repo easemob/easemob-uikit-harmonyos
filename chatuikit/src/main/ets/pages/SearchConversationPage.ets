@@ -22,6 +22,7 @@ export struct SearchConversationPage {
         onItemClick: this.onItemClick
       })
     }
+    .backgroundColor($r('app.color.chat_color_background'))
     .hideTitleBar(true)
     .onReady((context) => {
       this.pathStack = context.pathStack
