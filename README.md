@@ -101,111 +101,110 @@ ohpm install @easemob/chatuikit
 1. 打开 `entry/src/main/ets/pages/Index.ets` 文件，并替换为如下内容：
 
 ```typescript
-import { ChatPageParams, ChatUIKitClient } from '@easemob/chatuikit';
-import { ChatClient, ChatError, ChatOptions, ConversationType } from '@easemob/chatsdk';
+import { ChatPageParams, ChatUIKitClient, ChatClient, ChatError, ChatOptions, ConversationType } from '@easemob/chatuikit';
 import { promptAction } from '@kit.ArkUI';
 
 @Entry
 @Component
 struct Index {
-  pathStack: NavPathStack = new NavPathStack();
-  private appKey: string = [项目的AppKey]; // 将[项目的AppKey]替换为项目的AppKey字符串
-  private userId: string = '';
-  private password: string = '';
-  private peerId: string = '';
+   pathStack: NavPathStack = new NavPathStack();
+   private appKey: string = [项目的AppKey]; // 将[项目的AppKey]替换为项目的 App Key 字符串
+   private userId: string = '';
+   private password: string = '';
+   private peerId: string = '';
 
-  private initSDK() {
-    let options = new ChatOptions({
-      appKey: this.appKey
-    });
-    options.setAutoLogin(false);
-    let client = ChatClient.getInstance();
-    client.init(getContext(), options);
-    ChatUIKitClient.init(client);
-  }
+   private initSDK() {
+      let options = new ChatOptions({
+         appKey: this.appKey
+      });
+      options.setAutoLogin(false);
+      let client = ChatClient.getInstance();
+      client.init(getContext(), options);
+      ChatUIKitClient.init(client);
+   }
 
-  private login() {
-    if (!this.userId || !this.password) {
-      promptAction.showToast({message: "UserId or password cannot be empty!"});
-      return;
-    }
-    ChatUIKitClient.loginWithPassword(this.userId, this.password)
-      .then(() => {
-        promptAction.showToast({message: "Login successful!"});
-      })
-      .catch((e: ChatError) => {
-        promptAction.showToast({message: "Login failed: "+e.description});
-      })
-  }
-
-  private logout() {
-    ChatUIKitClient.logout(false)
-      .then(() => {
-        promptAction.showToast({message: "Logout successful!"});
-      })
-  }
-
-  private startChat() {
-    if (!this.peerId) {
-      promptAction.showToast({message: "Peer id cannot be empty!"});
-      return;
-    }
-    this.pathStack.pushPath({name: 'ChatPage', param: {
-      conversationId: this.peerId,
-      conversationType: ConversationType.Chat
-    } as ChatPageParams})
-  }
-
-  aboutToAppear(): void {
-    this.initSDK();
-  }
-
-  build() {
-    Navigation(this.pathStack) {
-      Column() {
-        TextInput({placeholder: 'UserId'})
-          .commonStyle()
-          .onChange(value => this.userId = value)
-
-        TextInput({ placeholder: 'Password' })
-          .commonStyle()
-          .type(InputType.Password)
-          .onChange(value => this.password = value)
-
-        Button('Login')
-          .commonStyle()
-          .onClick(()=> {
-            this.login();
-          })
-
-        Button('Logout')
-          .commonStyle()
-          .onClick(()=> {
-            this.logout();
-          })
-
-        TextInput({placeholder: 'PeerId'})
-          .commonStyle()
-          .onChange(value => this.peerId = value)
-
-        Button('Start Chat')
-          .commonStyle()
-          .onClick(()=> {
-            this.startChat();
-          })
+   private login() {
+      if (!this.userId || !this.password) {
+         promptAction.showToast({message: "UserId or password cannot be empty!"});
+         return;
       }
-      .width('100%')
-      .height('100%')
-    }
-  }
+      ChatUIKitClient.loginWithPassword(this.userId, this.password)
+         .then(() => {
+            promptAction.showToast({message: "Login successful!"});
+         })
+         .catch((e: ChatError) => {
+            promptAction.showToast({message: "Login failed: "+e.description});
+         })
+   }
 
-  @Styles
-  commonStyle() {
-    .width('80%')
-    .margin({
-      top: 20
-    })
-  }
+   private logout() {
+      ChatUIKitClient.logout(false)
+         .then(() => {
+            promptAction.showToast({message: "Logout successful!"});
+         })
+   }
+
+   private startChat() {
+      if (!this.peerId) {
+         promptAction.showToast({message: "Peer id cannot be empty!"});
+         return;
+      }
+      this.pathStack.pushPath({name: 'ChatPage', param: {
+         conversationId: this.peerId,
+         conversationType: ConversationType.Chat
+      } as ChatPageParams})
+   }
+
+   aboutToAppear(): void {
+      this.initSDK();
+   }
+
+   build() {
+      Navigation(this.pathStack) {
+         Column() {
+            TextInput({placeholder: 'UserId'})
+               .commonStyle()
+               .onChange(value => this.userId = value)
+
+            TextInput({ placeholder: 'Password' })
+               .commonStyle()
+               .type(InputType.Password)
+               .onChange(value => this.password = value)
+
+            Button('Login')
+               .commonStyle()
+               .onClick(()=> {
+                  this.login();
+               })
+
+            Button('Logout')
+               .commonStyle()
+               .onClick(()=> {
+                  this.logout();
+               })
+
+            TextInput({placeholder: 'PeerId'})
+               .commonStyle()
+               .onChange(value => this.peerId = value)
+
+            Button('Start Chat')
+               .commonStyle()
+               .onClick(()=> {
+                  this.startChat();
+               })
+         }
+         .width('100%')
+            .height('100%')
+      }
+   }
+
+   @Styles
+   commonStyle() {
+      .width('80%')
+         .margin({
+            top: 20
+         })
+   }
 }
 ```
 
