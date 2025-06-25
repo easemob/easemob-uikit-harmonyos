@@ -1,12 +1,11 @@
 import { ChatError, ChatUIKitClient } from '@easemob/chatuikit';
-import { promptAction, router } from '@kit.ArkUI';
 
 @Entry
 @ComponentV2
 struct Index {
   pathStack: NavPathStack = new NavPathStack();
   private userId: string = '';
-  private password: string = '';
+  private token: string = '';
 
   build() {
     Column() {
@@ -18,14 +17,13 @@ struct Index {
         .onChange((value) => {
           this.userId = value;
         })
-      TextInput({placeholder: "password"})
+      TextInput({placeholder: "Token", text: this.token})
         .margin({
           top: 20
         })
         .width('80%')
-        .type(InputType.Password)
         .onChange((value) => {
-          this.password = value;
+          this.token = value;
         })
       Button("登录")
         .margin({
@@ -33,14 +31,14 @@ struct Index {
         })
         .width('80%')
         .onClick(() => {
-          if (!this.userId || !this.password) {
-            promptAction.showToast({message: "用户名或者密码不能为空！"})
+          if (!this.userId || !this.token) {
+            this.getUIContext().getPromptAction().showToast({message: "用户名或者Token不能为空！"})
             return;
           }
-          ChatUIKitClient.login(this.userId, this.password).then(() => {
-            router.pushUrl({url: 'pages/MainPage'});
+          ChatUIKitClient.login(this.userId, this.token).then(() => {
+            this.getUIContext().getRouter().replaceUrl({url: 'pages/MainPage'});
           }).catch((e: ChatError) => {
-            promptAction.showToast({message: "Login failed: "+e.description});
+            this.getUIContext().getPromptAction().showToast({message: "Login failed: "+e.description});
           })
         })
     }
