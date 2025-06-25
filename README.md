@@ -28,7 +28,7 @@
 
 4. 点击 **Finish**。根据屏幕提示，安装所需插件。
 
-上述步骤使用 **DevEco Studio 5.0.1 Release（5.0.5.315）** 示例。
+上述步骤使用 **DevEco Studio 5.1.0 Release（5.1.0.828）** 示例。
 
 5. 在项目中引入 SDK 。
 
@@ -111,7 +111,7 @@ import { ChatPageParams, ChatUIKitClient, ChatClient, ChatError, ChatOptions, Co
 @Component
 struct Index {
    pathStack: NavPathStack = new NavPathStack();
-   private appKey: string = ''; // 将[项目的AppKey]替换为项目的 App Key 字符串
+   private appKey: string = [项目的AppKey]; // 将[项目的AppKey]替换为项目的 App Key 字符串
    private userId: string = '';
    private token: string = '';
    private peerId: string = '';
@@ -227,4 +227,4 @@ struct Index {
 
 3. 在另一台设备或者模拟器上登录另一个账号。
 
-4. 两台设别或者模拟器分别输入对方的账号，并点击 `Start Chat` 按钮，进入聊天页面。现在你可以在两个账号间进行聊天了。
+4. 两台设备或者模拟器分别输入对方的账号，并点击 `Start Chat` 按钮，进入聊天页面。现在你可以在两个账号间进行聊天了。
