@@ -28,7 +28,7 @@
 
 4. 点击 **Finish**。根据屏幕提示，安装所需插件。
 
-上述步骤使用 **DevEco Studio 5.0.1 Release（5.0.5.315）** 示例。
+上述步骤使用 **DevEco Studio 5.1.0 Release（5.1.0.828）** 示例。
 
 5. 在项目中引入 SDK 。
 
@@ -96,116 +96,117 @@ ohpm install @easemob/chatuikit
 
 本节介绍如何通过单群聊 UIKit 实现发送第一条单聊消息。
 
+为了方便快速体验，你可以在[环信即时通讯云控制台](https://console.easemob.com/user/login)的**应用概览** > **用户认证**页面创建用户并查看用户 token。**用户认证**页面中的用户仅用于快速体验或调试目的。
+
+在开发环境中，你需要在环信控制台[创建 IM 用户](https://doc.easemob.com/product/enable_and_configure_IM.html#%E5%88%9B%E5%BB%BA-im-%E7%94%A8%E6%88%B7)，从你的 App Server 获取用户 token，详见[使用环信用户 token 鉴权](https://doc.easemob.com/product/easemob_user_token.html) 。
+
 ### 创建快速开始页面及实现代码逻辑
 
 1. 打开 `entry/src/main/ets/pages/Index.ets` 文件，并替换为如下内容：
 
 ```typescript
-import { ChatPageParams, ChatUIKitClient } from '@easemob/chatuikit';
-import { ChatClient, ChatError, ChatOptions, ConversationType } from '@easemob/chatsdk';
-import { promptAction } from '@kit.ArkUI';
+import { ChatPageParams, ChatUIKitClient, ChatClient, ChatError, ChatOptions, ConversationType } from '@easemob/chatuikit';
 
 @Entry
 @Component
 struct Index {
-  pathStack: NavPathStack = new NavPathStack();
-  private appKey: string = [项目的AppKey]; // 将[项目的AppKey]替换为项目的AppKey字符串
-  private userId: string = '';
-  private password: string = '';
-  private peerId: string = '';
+   pathStack: NavPathStack = new NavPathStack();
+   private appKey: string = [项目的AppKey]; // 将[项目的AppKey]替换为项目的 App Key 字符串
+   private userId: string = '';
+   private token: string = '';
+   private peerId: string = '';
 
-  private initSDK() {
-    let options = new ChatOptions({
-      appKey: this.appKey
-    });
-    options.setAutoLogin(false);
-    let client = ChatClient.getInstance();
-    client.init(getContext(), options);
-    ChatUIKitClient.init(client);
-  }
+   private initSDK() {
+      let options = new ChatOptions({
+         appKey: this.appKey
+      });
+      options.setAutoLogin(false);
+      let client = ChatClient.getInstance();
+      client.init(this.getUIContext().getHostContext(), options);
+      ChatUIKitClient.init(client);
+   }
 
-  private login() {
-    if (!this.userId || !this.password) {
-      promptAction.showToast({message: "UserId or password cannot be empty!"});
-      return;
-    }
-    ChatUIKitClient.loginWithPassword(this.userId, this.password)
-      .then(() => {
-        promptAction.showToast({message: "Login successful!"});
-      })
-      .catch((e: ChatError) => {
-        promptAction.showToast({message: "Login failed: "+e.description});
-      })
-  }
-
-  private logout() {
-    ChatUIKitClient.logout(false)
-      .then(() => {
-        promptAction.showToast({message: "Logout successful!"});
-      })
-  }
-
-  private startChat() {
-    if (!this.peerId) {
-      promptAction.showToast({message: "Peer id cannot be empty!"});
-      return;
-    }
-    this.pathStack.pushPath({name: 'ChatPage', param: {
-      conversationId: this.peerId,
-      conversationType: ConversationType.Chat
-    } as ChatPageParams})
-  }
-
-  aboutToAppear(): void {
-    this.initSDK();
-  }
-
-  build() {
-    Navigation(this.pathStack) {
-      Column() {
-        TextInput({placeholder: 'UserId'})
-          .commonStyle()
-          .onChange(value => this.userId = value)
-
-        TextInput({ placeholder: 'Password' })
-          .commonStyle()
-          .type(InputType.Password)
-          .onChange(value => this.password = value)
-
-        Button('Login')
-          .commonStyle()
-          .onClick(()=> {
-            this.login();
-          })
-
-        Button('Logout')
-          .commonStyle()
-          .onClick(()=> {
-            this.logout();
-          })
-
-        TextInput({placeholder: 'PeerId'})
-          .commonStyle()
-          .onChange(value => this.peerId = value)
-
-        Button('Start Chat')
-          .commonStyle()
-          .onClick(()=> {
-            this.startChat();
-          })
+   private login() {
+      if (!this.userId || !this.token) {
+         this.getUIContext().getPromptAction().showToast({message: "UserId or token cannot be empty!"});
+         return;
       }
-      .width('100%')
-      .height('100%')
-    }
-  }
+      ChatUIKitClient.login(this.userId, this.token)
+         .then(() => {
+            this.getUIContext().getPromptAction().showToast({message: "Login successful!"});
+         })
+         .catch((e: ChatError) => {
+            this.getUIContext().getPromptAction().showToast({message: "Login failed: "+e.description});
+         })
+   }
 
-  @Styles
-  commonStyle() {
-    .width('80%')
-    .margin({
-      top: 20
-    })
-  }
+   private logout() {
+      ChatUIKitClient.logout(false)
+         .then(() => {
+            this.getUIContext().getPromptAction().showToast({message: "Logout successful!"});
+         })
+   }
+
+   private startChat() {
+      if (!this.peerId) {
+         this.getUIContext().getPromptAction().showToast({message: "Peer id cannot be empty!"});
+         return;
+      }
+      this.pathStack.pushPath({name: 'ChatPage', param: {
+         conversationId: this.peerId,
+         conversationType: ConversationType.Chat
+      } as ChatPageParams})
+   }
+
+   aboutToAppear(): void {
+      this.initSDK();
+   }
+
+   build() {
+      Navigation(this.pathStack) {
+         Column() {
+            TextInput({placeholder: 'UserId'})
+               .commonStyle()
+               .onChange(value => this.userId = value)
+
+            TextInput({ placeholder: 'Token', text: this.token })
+               .commonStyle()
+               .onChange(value => this.token = value)
+
+            Button('Login')
+               .commonStyle()
+               .onClick(()=> {
+                  this.login();
+               })
+
+            Button('Logout')
+               .commonStyle()
+               .onClick(()=> {
+                  this.logout();
+               })
+
+            TextInput({placeholder: 'PeerId'})
+               .commonStyle()
+               .onChange(value => this.peerId = value)
+
+            Button('Start Chat')
+               .commonStyle()
+               .onClick(()=> {
+                  this.startChat();
+               })
+         }
+         .width('100%')
+            .height('100%')
+      }
+   }
+
+   @Styles
+   commonStyle() {
+      .width('80%')
+         .margin({
+            top: 20
+         })
+   }
 }
 ```
 
@@ -226,4 +227,4 @@ struct Index {
 
 3. 在另一台设备或者模拟器上登录另一个账号。
 
-4. 两台设别或者模拟器分别输入对方的账号，并点击 `Start Chat` 按钮，进入聊天页面。现在你可以在两个账号间进行聊天了。
+4. 两台设备或者模拟器分别输入对方的账号，并点击 `Start Chat` 按钮，进入聊天页面。现在你可以在两个账号间进行聊天了。
