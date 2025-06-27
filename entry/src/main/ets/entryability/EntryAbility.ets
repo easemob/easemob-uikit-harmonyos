@@ -1,7 +1,7 @@
 import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { ChatClient, ChatOptions, ChatUIKitClient } from '@easemob/chatuikit';
+import { ChatClient, ChatUIKitClient } from '@easemob/chatuikit';
 
 export default class EntryAbility extends UIAbility {
   private appKey: string = 'easemob#easeim';
@@ -11,12 +11,11 @@ export default class EntryAbility extends UIAbility {
   }
 
   initSDK() {
-    let option: ChatOptions = new ChatOptions({
-      appKey: this.appKey
-    });
-    option.setAutoLogin(false);
     let client = ChatClient.getInstance();
-    client.init(this.context, option);
+    client.init(this.context, {
+      appKey: this.appKey,
+      isAutoLogin: false
+    });
     ChatUIKitClient.init(client);
   }
 
